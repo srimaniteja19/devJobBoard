@@ -102,8 +102,7 @@ Return only valid JSON, no markdown, no explanation.`,
     const searchModel = genAI.getGenerativeModel({
       model: "gemini-2.5-flash-lite",
       // API expects google_search (not googleSearchRetrieval) for Gemini 2.x
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    tools: [{ google_search: {} }] as any,
+    tools: [{ google_search: {} }] as unknown as { googleSearchRetrieval?: object }[],
       systemInstruction:
         "You are a job search assistant. Search for currently open job positions and return results as a JSON array only. No markdown, no explanation, no code fence, just the raw JSON array.",
     });
