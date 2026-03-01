@@ -1,4 +1,5 @@
 @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@1&family=DM+Sans:wght@300;400;500&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -57,4 +58,45 @@
   );
   background-size: 200% 100%;
   animation: shimmer 1.5s ease infinite;
+}
+
+/* Subtle scrollbars for board */
+.scroll-thin::-webkit-scrollbar {
+  height: 6px;
+}
+.scroll-thin::-webkit-scrollbar-track {
+  background: #0a0a0a;
+}
+.scroll-thin::-webkit-scrollbar-thumb {
+  background: #1e1e1e;
+  border-radius: 3px;
+}
+.scroll-thin::-webkit-scrollbar-thumb:hover {
+  background: #2e2e2e;
+}
+.scroll-thin-y::-webkit-scrollbar {
+  width: 5px;
+}
+.scroll-thin-y::-webkit-scrollbar-track {
+  background: transparent;
+}
+.scroll-thin-y::-webkit-scrollbar-thumb {
+  background: #1e1e1e;
+  border-radius: 3px;
+}
+
+/* Kanban board: subtle gradient shift (disabled when prefers-reduced-motion) */
+.kanban-board-bg {
+  background: linear-gradient(135deg, #f7f4f8 0%, #feeafa 50%, #f0edf5 100%);
+  background-size: 200% 200%;
+  animation: kanban-gradient-shift 12s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .kanban-board-bg {
+    animation: none;
+  }
+}
+@keyframes kanban-gradient-shift {
+  0%, 100% { background-position: 0% 0%; }
+  50% { background-position: 100% 100%; }
 }
