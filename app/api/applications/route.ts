@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { authenticatedAction } from "@/lib/api-auth";
 import { applicationSchema } from "@/lib/validations/application";
+import { logActivity } from "@/lib/activity";
 
 export async function GET() {
   const { user, unauthorized } = await authenticatedAction();
@@ -56,6 +57,8 @@ export async function POST(req: NextRequest) {
       userId: user.id,
     },
   });
+
+  await logActivity(user.id, app.id, "Application created");
 
   return NextResponse.json({ id: app.id }, { status: 201 });
 }

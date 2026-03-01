@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { authenticatedAction } from "@/lib/api-auth";
 import { applicationSchema } from "@/lib/validations/application";
+import { logActivity } from "@/lib/activity";
 
 export async function GET(
   _req: NextRequest,
@@ -44,7 +45,12 @@ export async function PATCH(
   // Allow partial updates — only validate provided fields
   const updateData: Record<string, any> = {};
 
-  if (body.status !== undefined) updateData.status = body.status;
+  if (body.status !== undefined) {
+    updateData.status = body.status;
+  }
+  if (body.followUpDate !== undefined) {
+    updateData.followUpDate = body.followUpDate ? new Date(body.followUpDate) : null;
+  }
   if (body.company !== undefined) updateData.company = body.company;
   if (body.role !== undefined) updateData.role = body.role;
   if (body.jobUrl !== undefined) updateData.jobUrl = body.jobUrl || null;
@@ -63,6 +69,16 @@ export async function PATCH(
     data: updateData,
   });
 
+  if (body.status !== undefined && body.status !== existing.status) {
+    await logActivity(user.id, params.id, `Status changed to ${body.status}`);
+  }
+  if (body.notes !== undefined && body.notes !== existing.notes) {
+    await logActivity(user.id, params.id, "Note updated");
+  }
+  if (body.followUpDate !== undefined) {
+    await logActivity(user.id, params.id, body.followUpDate ? "Follow-up reminder set" : "Follow-up reminder removed");
+  }
+
   return NextResponse.json(updated);
 }
 
@@ -80,6 +96,7 @@ export async function DELETE(
     return NextResponse.json({ error: "Not found" }, { status: 404 });
   }
 
+  await logActivity(user.id, params.id, "Application deleted");
   await prisma.application.delete({ where: { id: params.id } });
 
   return NextResponse.json({ deleted: true });

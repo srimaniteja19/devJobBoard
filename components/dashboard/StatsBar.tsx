@@ -16,14 +16,16 @@ export default function StatsBar({ total, active, interviews, offers, rejectionR
   ];
 
   return (
-    <div className="flex gap-3 overflow-x-auto">
-      {items.map((s) => (
+    <div className="grid grid-cols-3 gap-2 sm:flex sm:gap-3">
+      {items.map((s, i) => (
         <div
           key={s.label}
-          className="flex min-w-[110px] flex-1 items-center gap-3 border border-edge bg-surface px-4 py-3 transition-theme hover:-translate-y-px hover:border-edge-hover"
+          className={`flex items-center gap-2 border border-edge bg-surface px-3 py-2.5 transition-theme hover:-translate-y-px hover:border-edge-hover sm:min-w-[110px] sm:flex-1 sm:gap-3 sm:px-4 sm:py-3 ${
+            i >= 3 ? "col-span-3 sm:col-span-1" : ""
+          }`}
         >
-          <span className={`text-[36px] font-medium leading-none ${s.color}`}>{s.value}</span>
-          <span className="text-[13px] font-light text-t-muted">{s.label}</span>
+          <span className={`text-[24px] font-medium leading-none sm:text-[36px] ${s.color}`}>{s.value}</span>
+          <span className="text-[11px] font-light text-t-muted sm:text-[13px]">{s.label}</span>
         </div>
       ))}
     </div>

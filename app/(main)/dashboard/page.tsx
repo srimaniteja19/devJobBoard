@@ -1,17 +1,19 @@
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/session";
-import { getUserApplications, getApplicationStats } from "@/lib/applications";
+import { getUserApplications, getApplicationStats, getFollowUpReminders } from "@/lib/applications";
 import StatsBar from "@/components/dashboard/StatsBar";
 import KanbanBoard from "@/components/dashboard/KanbanBoard";
+import FollowUpReminders from "@/components/dashboard/FollowUpReminders";
 import AddButton from "@/components/applications/AddButton";
 
 export default async function DashboardPage() {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
 
-  const [applications, stats] = await Promise.all([
+  const [applications, stats, followUps] = await Promise.all([
     getUserApplications(user.id),
     getApplicationStats(user.id),
+    getFollowUpReminders(user.id),
   ]);
 
   const serialized = applications.map((a) => ({
@@ -23,11 +25,20 @@ export default async function DashboardPage() {
     createdAt: a.createdAt.toISOString(),
   }));
 
+  const reminders = followUps.map((f) => ({
+    id: f.id,
+    company: f.company,
+    role: f.role,
+    followUpDate: f.followUpDate!.toISOString().slice(0, 10),
+  }));
+
   return (
-    <div className="container mx-auto max-w-6xl px-4 py-6">
-      <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-[28px] font-medium text-t-primary">Dashboard</h1>
-        <AddButton />
+    <div className="container mx-auto max-w-6xl px-4 py-4 sm:py-6">
+      <div className="mb-4 flex items-center justify-between sm:mb-6">
+        <h1 className="text-[22px] font-medium text-t-primary sm:text-[28px]">Dashboard</h1>
+        <div className="hidden sm:block">
+          <AddButton />
+        </div>
       </div>
 
       <StatsBar
@@ -38,7 +49,8 @@ export default async function DashboardPage() {
         rejectionRate={stats.rejectionRate}
       />
 
-      <div className="mt-6">
+      <div className="mt-4 sm:mt-6">
+        <FollowUpReminders reminders={reminders} />
         <KanbanBoard applications={serialized} />
       </div>
     </div>

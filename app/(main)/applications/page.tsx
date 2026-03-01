@@ -23,13 +23,15 @@ export default async function ApplicationsPage() {
   }));
 
   return (
-    <div className="container mx-auto max-w-6xl px-4 py-6">
-      <div className="mb-6 flex items-center justify-between">
+    <div className="container mx-auto max-w-6xl px-4 py-4 sm:py-6">
+      <div className="mb-4 flex items-center justify-between sm:mb-6">
         <div>
-          <h1 className="text-[28px] font-medium text-t-primary">Applications</h1>
-          <p className="text-[13px] font-light text-t-muted">{applications.length} total</p>
+          <h1 className="text-[22px] font-medium text-t-primary sm:text-[28px]">Applications</h1>
+          <p className="text-[12px] font-light text-t-muted sm:text-[13px]">{applications.length} total</p>
         </div>
-        <AddButton />
+        <div className="hidden sm:block">
+          <AddButton />
+        </div>
       </div>
 
       <ApplicationsTable applications={serialized} />

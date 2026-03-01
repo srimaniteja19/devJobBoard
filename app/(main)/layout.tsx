@@ -2,13 +2,16 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { LayoutDashboard, Table2, BarChart3, Activity } from "lucide-react";
 import AuthButton from "@/components/layout/AuthButton";
 import AddButton from "@/components/applications/AddButton";
+import { useSearch } from "@/components/providers/SearchProvider";
 
 const NAV_ITEMS = [
-  { href: "/dashboard", label: "Board" },
-  { href: "/applications", label: "Table" },
-  { href: "/stats", label: "Stats" },
+  { href: "/dashboard", label: "Board", icon: LayoutDashboard },
+  { href: "/applications", label: "Table", icon: Table2 },
+  { href: "/stats", label: "Stats", icon: BarChart3 },
+  { href: "/activity", label: "Activity", icon: Activity },
 ];
 
 export default function MainLayout({
@@ -17,9 +20,11 @@ export default function MainLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const { setOpen } = useSearch();
 
   return (
-    <div className="min-h-screen bg-bg">
+    <div className="min-h-screen bg-bg pb-16 sm:pb-0">
+      {/* Desktop top nav */}
       <header className="sticky top-0 z-40 border-b border-edge bg-bg">
         <nav className="container mx-auto flex h-12 max-w-6xl items-center justify-between px-4">
           <div className="flex items-center gap-6">
@@ -34,9 +39,7 @@ export default function MainLayout({
                     key={item.href}
                     href={item.href}
                     className={`relative px-2.5 py-1.5 text-[13px] font-light transition-theme ${
-                      isActive
-                        ? "text-t-primary"
-                        : "text-t-muted hover:text-t-primary"
+                      isActive ? "text-t-primary" : "text-t-muted hover:text-t-primary"
                     }`}
                   >
                     {item.label}
@@ -47,12 +50,42 @@ export default function MainLayout({
                 );
               })}
               <AddButton variant="nav" />
+              <button
+                onClick={() => setOpen(true)}
+                className="ml-1 flex items-center gap-1 border border-edge px-2 py-1 text-[10px] text-t-faint transition-theme hover:border-edge-hover hover:text-t-muted"
+              >
+                <span>⌘K</span>
+              </button>
             </div>
           </div>
           <AuthButton />
         </nav>
       </header>
+
       <main>{children}</main>
+
+      {/* Mobile bottom nav */}
+      <nav className="fixed bottom-0 left-0 right-0 z-40 flex items-center justify-around border-t border-edge bg-bg sm:hidden">
+        {NAV_ITEMS.map((item) => {
+          const Icon = item.icon;
+          const isActive = pathname === item.href;
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={`flex flex-1 flex-col items-center gap-0.5 py-2.5 text-[10px] font-light transition-theme ${
+                isActive ? "text-accent" : "text-t-muted"
+              }`}
+            >
+              <Icon className="h-4 w-4" />
+              {item.label}
+            </Link>
+          );
+        })}
+        <div className="flex flex-1 flex-col items-center gap-0.5 py-2.5">
+          <AddButton variant="mobile" />
+        </div>
+      </nav>
     </div>
   );
 }

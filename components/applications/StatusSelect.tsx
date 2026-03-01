@@ -2,15 +2,18 @@
 
 import { useState } from "react";
 import { STATUS_LABELS, STATUS_COLORS, KANBAN_COLUMNS, type AppStatus } from "@/types";
+import { useToast } from "@/components/providers/ToastProvider";
 
 interface StatusSelectProps {
   applicationId: string;
   currentStatus: AppStatus;
+  company?: string;
 }
 
-export default function StatusSelect({ applicationId, currentStatus }: StatusSelectProps) {
+export default function StatusSelect({ applicationId, currentStatus, company }: StatusSelectProps) {
   const [status, setStatus] = useState(currentStatus);
   const [loading, setLoading] = useState(false);
+  const { toast } = useToast();
 
   const handleChange = async (newStatus: string) => {
     const prev = status;
@@ -23,7 +26,11 @@ export default function StatusSelect({ applicationId, currentStatus }: StatusSel
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status: newStatus }),
       });
-      if (!res.ok) setStatus(prev);
+      if (!res.ok) {
+        setStatus(prev);
+      } else {
+        toast(`${company || "Application"} → ${STATUS_LABELS[newStatus as AppStatus]}`);
+      }
     } catch {
       setStatus(prev);
     } finally {

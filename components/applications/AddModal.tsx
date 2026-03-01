@@ -97,28 +97,30 @@ export default function AddModal({ open, onClose }: AddModalProps) {
   return (
     <div
       ref={overlayRef}
-      className="fixed inset-0 z-50 flex items-start justify-center overflow-y-auto bg-black/60 p-4 pt-[8vh] backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 backdrop-blur-sm sm:items-start sm:overflow-y-auto sm:p-4 sm:pt-[8vh]"
       onClick={(e) => { if (e.target === overlayRef.current) onClose(); }}
     >
-      <div className="w-full max-w-lg border border-edge bg-surface">
-        <div className="flex items-center justify-between border-b border-edge px-5 py-4">
+      <div className="flex max-h-[90vh] w-full flex-col border-t border-edge bg-surface sm:max-h-none sm:max-w-lg sm:border">
+        {/* Header */}
+        <div className="flex shrink-0 items-center justify-between border-b border-edge px-4 py-3 sm:px-5 sm:py-4">
           <h2 className="text-[14px] font-medium text-t-primary">Add Application</h2>
           <button onClick={onClose} className="p-1 text-t-faint transition-theme hover:text-t-primary">
             <X className="h-5 w-5" />
           </button>
         </div>
 
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 px-5 py-4">
+        {/* Scrollable form */}
+        <form onSubmit={handleSubmit(onSubmit)} className="flex-1 space-y-4 overflow-y-auto px-4 py-4 sm:px-5">
           {serverError && (
             <p className="border border-[#3a1a1a] bg-[#1a0f0f] px-3 py-2 text-[12px] text-[#f87171]">{serverError}</p>
           )}
 
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="grid gap-3 grid-cols-2">
             <Fld label="Company" required error={errors.company?.message}>
               <input {...register("company")} placeholder="Stripe" className={ic(errors.company)} autoFocus />
             </Fld>
             <Fld label="Role" required error={errors.role?.message}>
-              <input {...register("role")} placeholder="Senior Frontend Engineer" className={ic(errors.role)} />
+              <input {...register("role")} placeholder="Sr. Frontend Eng" className={ic(errors.role)} />
             </Fld>
           </div>
 
@@ -126,7 +128,7 @@ export default function AddModal({ open, onClose }: AddModalProps) {
             <input {...register("jobUrl")} placeholder="https://..." className={ic(errors.jobUrl)} />
           </Fld>
 
-          <div className="grid gap-3 sm:grid-cols-3">
+          <div className="grid gap-3 grid-cols-3">
             <Fld label="Type">
               <select {...register("type")} className={ic()}>
                 {TYPES.map((t) => <option key={t} value={t}>{LOCATION_LABELS[t]}</option>)}
@@ -142,19 +144,19 @@ export default function AddModal({ open, onClose }: AddModalProps) {
             </Fld>
           </div>
 
-          <div className="grid gap-3 sm:grid-cols-2">
+          <div className="grid gap-3 grid-cols-2">
             <Fld label="Location">
-              <input {...register("location")} placeholder="San Francisco, CA" className={ic()} />
+              <input {...register("location")} placeholder="SF, CA" className={ic()} />
             </Fld>
             <Fld label="Salary">
-              <input {...register("salary")} placeholder="$120k – $160k" className={ic()} />
+              <input {...register("salary")} placeholder="$120k–$160k" className={ic()} />
             </Fld>
           </div>
 
           <Fld label="Resume Used" error={errors.resumeLabel?.message}>
             <input
               {...register("resumeLabel")}
-              placeholder="e.g. Frontend v2, General"
+              placeholder="e.g. Frontend v2"
               list="resume-presets"
               className={ic()}
             />
@@ -176,12 +178,13 @@ export default function AddModal({ open, onClose }: AddModalProps) {
           <Fld label="Notes">
             <textarea
               {...register("notes")}
-              rows={3}
+              rows={2}
               placeholder="Quick notes..."
               className={`${ic()} resize-y text-[13px]`}
             />
           </Fld>
 
+          {/* Footer */}
           <div className="flex justify-end gap-2 border-t border-edge pt-4">
             <button type="button" onClick={onClose} className="press px-4 py-2 text-[13px] font-light text-t-muted transition-theme hover:text-t-primary">
               Cancel
@@ -189,7 +192,7 @@ export default function AddModal({ open, onClose }: AddModalProps) {
             <button
               type="submit"
               disabled={isSubmitting}
-              className="press inline-flex items-center gap-1.5 bg-accent px-4 py-2 text-[13px] font-medium text-bg transition-theme hover:bg-accent-hover disabled:opacity-50"
+              className="press inline-flex items-center gap-1.5 bg-accent px-4 py-2.5 text-[13px] font-medium text-bg transition-theme hover:bg-accent-hover disabled:opacity-50"
             >
               {isSubmitting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Plus className="h-3.5 w-3.5" />}
               Add

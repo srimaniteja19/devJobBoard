@@ -18,11 +18,11 @@ export default async function StatsPage() {
   ]);
 
   return (
-    <div className="container mx-auto max-w-5xl px-4 py-6">
-      <div className="mb-6">
-        <h1 className="text-[28px] font-medium text-t-primary">Statistics</h1>
-        <p className="text-[13px] font-light text-t-muted">
-          Insights into your job search progress
+    <div className="container mx-auto max-w-5xl px-4 py-4 sm:py-6">
+      <div className="mb-4 sm:mb-6">
+        <h1 className="text-[22px] font-medium text-t-primary sm:text-[28px]">Statistics</h1>
+        <p className="text-[12px] font-light text-t-muted sm:text-[13px]">
+          Insights into your job search
         </p>
       </div>
 
@@ -33,6 +33,11 @@ export default async function StatsPage() {
         responseRate={advanced.responseRate}
         interviewConversion={advanced.interviewConversion}
         avgDaysToResponse={advanced.avgDaysToResponse}
+        stackResponseRates={advanced.stackResponseRates}
+        funnel={advanced.funnel}
+        bestDayData={advanced.bestDayData}
+        resumeBreakdown={advanced.resumeBreakdown}
+        dailyActivity={advanced.dailyActivity}
       />
     </div>
   );

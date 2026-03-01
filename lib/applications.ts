@@ -81,6 +81,7 @@ export async function getAdvancedStats(userId: string) {
       updatedAt: true,
       company: true,
       stack: true,
+      resumeLabel: true,
     },
   });
 
@@ -97,7 +98,6 @@ export async function getAdvancedStats(userId: string) {
   const interviewConversion =
     applied.length > 0 ? Math.round((interviewed.length / applied.length) * 100) : 0;
 
-  // Average days to first response (applied → screening+)
   const responseDays: number[] = [];
   for (const a of screened) {
     const from = a.appliedAt ?? a.createdAt;
@@ -109,7 +109,6 @@ export async function getAdvancedStats(userId: string) {
       ? Math.round(responseDays.reduce((s, d) => s + d, 0) / responseDays.length)
       : 0;
 
-  // Top companies
   const companyCounts: Record<string, number> = {};
   for (const a of apps) {
     companyCounts[a.company] = (companyCounts[a.company] || 0) + 1;
@@ -118,17 +117,86 @@ export async function getAdvancedStats(userId: string) {
     .sort((a, b) => b[1] - a[1])
     .slice(0, 5);
 
-  // Top stacks
   const stackCounts: Record<string, number> = {};
+  const stackResponseCounts: Record<string, number> = {};
   for (const a of apps) {
     try {
       const tags: string[] = JSON.parse(a.stack);
-      for (const t of tags) stackCounts[t] = (stackCounts[t] || 0) + 1;
+      for (const t of tags) {
+        stackCounts[t] = (stackCounts[t] || 0) + 1;
+        if (["SCREENING", "INTERVIEW", "OFFER"].includes(a.status)) {
+          stackResponseCounts[t] = (stackResponseCounts[t] || 0) + 1;
+        }
+      }
     } catch {}
   }
   const topStacks = Object.entries(stackCounts)
     .sort((a, b) => b[1] - a[1])
     .slice(0, 8);
+
+  const stackResponseRates = Object.entries(stackCounts)
+    .filter(([_, count]) => count >= 2)
+    .map(([tag, total]) => ({
+      tag,
+      total,
+      responses: stackResponseCounts[tag] || 0,
+      rate: Math.round(((stackResponseCounts[tag] || 0) / total) * 100),
+    }))
+    .sort((a, b) => b.rate - a.rate)
+    .slice(0, 8);
+
+  // Status funnel
+  const funnel = [
+    { stage: "Applied", count: applied.length },
+    { stage: "Screening", count: apps.filter((a) => ["SCREENING", "INTERVIEW", "OFFER"].includes(a.status)).length },
+    { stage: "Interview", count: apps.filter((a) => ["INTERVIEW", "OFFER"].includes(a.status)).length },
+    { stage: "Offer", count: apps.filter((a) => a.status === "OFFER").length },
+  ];
+
+  // Best day of week
+  const dayOfWeekCounts = [0, 0, 0, 0, 0, 0, 0];
+  const dayOfWeekResponses = [0, 0, 0, 0, 0, 0, 0];
+  for (const a of apps) {
+    const date = a.appliedAt ?? a.createdAt;
+    const day = date.getDay();
+    dayOfWeekCounts[day]++;
+    if (["SCREENING", "INTERVIEW", "OFFER"].includes(a.status)) {
+      dayOfWeekResponses[day]++;
+    }
+  }
+  const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  const bestDayData = dayNames.map((name, i) => ({
+    day: name,
+    applied: dayOfWeekCounts[i],
+    responses: dayOfWeekResponses[i],
+    rate: dayOfWeekCounts[i] > 0 ? Math.round((dayOfWeekResponses[i] / dayOfWeekCounts[i]) * 100) : 0,
+  }));
+
+  // Resume breakdown
+  const resumeCounts: Record<string, { total: number; responses: number }> = {};
+  for (const a of apps) {
+    const label = a.resumeLabel || "None";
+    if (!resumeCounts[label]) resumeCounts[label] = { total: 0, responses: 0 };
+    resumeCounts[label].total++;
+    if (["SCREENING", "INTERVIEW", "OFFER"].includes(a.status)) {
+      resumeCounts[label].responses++;
+    }
+  }
+  const resumeBreakdown = Object.entries(resumeCounts)
+    .map(([label, { total, responses }]) => ({
+      label,
+      total,
+      responses,
+      rate: total > 0 ? Math.round((responses / total) * 100) : 0,
+    }))
+    .sort((a, b) => b.total - a.total);
+
+  // Daily activity for heatmap
+  const dailyActivity: Record<string, number> = {};
+  for (const a of apps) {
+    const key = a.createdAt.toISOString().slice(0, 10);
+    dailyActivity[key] = (dailyActivity[key] || 0) + 1;
+  }
 
   return {
     responseRate,
@@ -136,5 +204,44 @@ export async function getAdvancedStats(userId: string) {
     avgDaysToResponse,
     topCompanies,
     topStacks,
+    stackResponseRates,
+    funnel,
+    bestDayData,
+    resumeBreakdown,
+    dailyActivity,
   };
+}
+
+export async function getFollowUpReminders(userId: string) {
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  tomorrow.setHours(23, 59, 59, 999);
+
+  return prisma.application.findMany({
+    where: {
+      userId,
+      followUpDate: { lte: tomorrow },
+      status: { in: ["APPLIED", "SCREENING"] },
+    },
+    select: {
+      id: true,
+      company: true,
+      role: true,
+      followUpDate: true,
+    },
+    orderBy: { followUpDate: "asc" },
+  });
+}
+
+export async function getOverdueCount(userId: string) {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  return prisma.application.count({
+    where: {
+      userId,
+      followUpDate: { lte: today },
+      status: { in: ["APPLIED", "SCREENING"] },
+    },
+  });
 }

@@ -28,3 +28,8 @@
     @apply active:scale-[0.97] active:duration-100;
   }
 }
+
+@keyframes slideIn {
+  from { opacity: 0; transform: translateX(16px); }
+  to { opacity: 1; transform: translateX(0); }
+}

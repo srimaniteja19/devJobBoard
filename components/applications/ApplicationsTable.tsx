@@ -2,11 +2,13 @@
 
 import { useState, useMemo } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { format } from "date-fns";
-import { ArrowUpDown, Search } from "lucide-react";
+import { ArrowUpDown, Search, Trash2 } from "lucide-react";
 import StatusSelect from "./StatusSelect";
-import { STATUS_LABELS, KANBAN_COLUMNS, type AppStatus } from "@/types";
+import { STATUS_LABELS, STATUS_COLORS, KANBAN_COLUMNS, type AppStatus } from "@/types";
 import { parseStack, getTagColor } from "@/lib/utils";
+import { useToast } from "@/components/providers/ToastProvider";
 
 interface AppRow {
   id: string;
@@ -27,6 +29,12 @@ export default function ApplicationsTable({ applications }: { applications: AppR
   const [statusFilter, setStatusFilter] = useState("");
   const [sortKey, setSortKey] = useState<SortKey>("updatedAt");
   const [sortAsc, setSortAsc] = useState(false);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [bulkStatus, setBulkStatus] = useState("");
+  const [bulkLoading, setBulkLoading] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const router = useRouter();
+  const { toast } = useToast();
 
   const filtered = useMemo(() => {
     let result = applications;
@@ -52,10 +60,60 @@ export default function ApplicationsTable({ applications }: { applications: AppR
     else { setSortKey(key); setSortAsc(true); }
   };
 
+  const toggleOne = (id: string) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleAll = () => {
+    if (selected.size === filtered.length) setSelected(new Set());
+    else setSelected(new Set(filtered.map((a) => a.id)));
+  };
+
+  const bulkMove = async () => {
+    if (!bulkStatus || selected.size === 0) return;
+    setBulkLoading(true);
+    try {
+      const res = await fetch("/api/applications/bulk-update", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ids: Array.from(selected), status: bulkStatus }),
+      });
+      if (res.ok) {
+        toast(`${selected.size} moved to ${STATUS_LABELS[bulkStatus as AppStatus]}`);
+        setSelected(new Set());
+        setBulkStatus("");
+        router.refresh();
+      }
+    } catch {} finally { setBulkLoading(false); }
+  };
+
+  const bulkDelete = async () => {
+    if (selected.size === 0) return;
+    setBulkLoading(true);
+    try {
+      const res = await fetch("/api/applications/bulk-update", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ids: Array.from(selected) }),
+      });
+      if (res.ok) {
+        toast(`${selected.size} deleted`);
+        setSelected(new Set());
+        setConfirmDelete(false);
+        router.refresh();
+      }
+    } catch {} finally { setBulkLoading(false); }
+  };
+
   return (
     <div className="space-y-4">
+      {/* Filters */}
       <div className="flex flex-wrap items-center gap-2">
-        <div className="relative flex-1 sm:max-w-xs">
+        <div className="relative min-w-0 flex-1">
           <Search className="absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-t-faint" />
           <input
             type="text"
@@ -77,10 +135,57 @@ export default function ApplicationsTable({ applications }: { applications: AppR
         </select>
       </div>
 
-      <div className="overflow-x-auto">
+      {/* Mobile card list */}
+      <div className="space-y-2 sm:hidden">
+        {filtered.length === 0 ? (
+          <p className="py-12 text-center text-[13px] text-t-faint">No applications found</p>
+        ) : (
+          filtered.map((a) => (
+            <Link
+              key={a.id}
+              href={`/applications/${a.id}`}
+              className="block border border-edge bg-surface p-3 transition-theme active:bg-bg"
+            >
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-[13px] font-medium text-t-primary">{a.company}</p>
+                  <p className="truncate text-[12px] font-light text-[#777]">{a.role}</p>
+                </div>
+                <span className={`shrink-0 text-[12px] font-medium ${STATUS_COLORS[a.status as AppStatus]}`}>
+                  {STATUS_LABELS[a.status as AppStatus]}
+                </span>
+              </div>
+              <div className="mt-2 flex flex-wrap items-center gap-2">
+                {a.resumeLabel && (
+                  <span className="border border-edge bg-[#1a1a1a] px-1.5 py-0.5 text-[10px] font-medium text-t-muted">{a.resumeLabel}</span>
+                )}
+                {parseStack(a.stack).slice(0, 2).map((t) => (
+                  <span key={t} className={`px-1.5 py-0.5 text-[10px] font-medium ${getTagColor(t)}`}>{t}</span>
+                ))}
+                {a.appliedAt && (
+                  <span className="ml-auto text-[10px] font-light text-t-faint">
+                    {format(new Date(a.appliedAt), "MMM d")}
+                  </span>
+                )}
+              </div>
+            </Link>
+          ))
+        )}
+      </div>
+
+      {/* Desktop table */}
+      <div className="hidden overflow-x-auto sm:block">
         <table className="w-full text-[13px]">
           <thead>
             <tr className="border-b border-edge text-left">
+              <th className="w-10 px-3 py-2.5">
+                <input
+                  type="checkbox"
+                  checked={filtered.length > 0 && selected.size === filtered.length}
+                  onChange={toggleAll}
+                  className="accent-accent"
+                />
+              </th>
               <SortTh label="Company" k="company" cur={sortKey} asc={sortAsc} onClick={toggleSort} />
               <SortTh label="Role" k="role" cur={sortKey} asc={sortAsc} onClick={toggleSort} />
               <th className="px-3 py-2.5 text-[11px] font-medium uppercase tracking-widest text-t-faint">Status</th>
@@ -92,13 +197,21 @@ export default function ApplicationsTable({ applications }: { applications: AppR
           <tbody>
             {filtered.length === 0 ? (
               <tr>
-                <td colSpan={6} className="px-3 py-12 text-center text-[13px] text-t-faint">
+                <td colSpan={7} className="px-3 py-12 text-center text-[13px] text-t-faint">
                   No applications found
                 </td>
               </tr>
             ) : (
               filtered.map((a) => (
-                <tr key={a.id} className="border-b border-[#0f0f0f] transition-theme hover:bg-surface">
+                <tr key={a.id} className={`border-b border-[#0f0f0f] transition-theme hover:bg-surface ${selected.has(a.id) ? "bg-surface/50" : ""}`}>
+                  <td className="px-3 py-3">
+                    <input
+                      type="checkbox"
+                      checked={selected.has(a.id)}
+                      onChange={() => toggleOne(a.id)}
+                      className="accent-accent"
+                    />
+                  </td>
                   <td className="px-3 py-3">
                     <Link href={`/applications/${a.id}`} className="font-medium text-t-primary transition-theme hover:text-accent">
                       {a.company}
@@ -106,11 +219,11 @@ export default function ApplicationsTable({ applications }: { applications: AppR
                   </td>
                   <td className="px-3 py-3 font-light text-[#999]">{a.role}</td>
                   <td className="px-3 py-3">
-                    <StatusSelect applicationId={a.id} currentStatus={a.status as AppStatus} />
+                    <StatusSelect applicationId={a.id} currentStatus={a.status as AppStatus} company={a.company} />
                   </td>
                   <td className="px-3 py-3">
                     {a.resumeLabel ? (
-                      <span className="bg-edge px-1.5 py-0.5 text-[10px] font-medium text-t-muted">
+                      <span className="border border-edge bg-[#1a1a1a] px-1.5 py-0.5 text-[10px] font-medium text-t-muted">
                         {a.resumeLabel}
                       </span>
                     ) : (
@@ -135,6 +248,65 @@ export default function ApplicationsTable({ applications }: { applications: AppR
           </tbody>
         </table>
       </div>
+
+      {/* Bulk action bar */}
+      {selected.size > 0 && (
+        <div className="fixed bottom-4 left-1/2 z-50 -translate-x-1/2 border border-edge bg-surface px-4 py-3 sm:bottom-6">
+          <div className="flex items-center gap-3">
+            <span className="text-[13px] font-medium text-t-primary">{selected.size} selected</span>
+            <span className="h-4 w-px bg-edge" />
+            <select
+              value={bulkStatus}
+              onChange={(e) => setBulkStatus(e.target.value)}
+              className="border border-edge bg-bg px-2 py-1 text-[12px] text-t-muted focus:border-accent focus:outline-none"
+            >
+              <option value="">Move to…</option>
+              {KANBAN_COLUMNS.map((s) => (
+                <option key={s} value={s}>{STATUS_LABELS[s]}</option>
+              ))}
+            </select>
+            <button
+              onClick={bulkMove}
+              disabled={!bulkStatus || bulkLoading}
+              className="bg-accent px-3 py-1 text-[12px] font-medium text-bg transition-theme hover:bg-accent-hover disabled:opacity-40"
+            >
+              Apply
+            </button>
+            <span className="h-4 w-px bg-edge" />
+            {confirmDelete ? (
+              <div className="flex items-center gap-2">
+                <span className="text-[11px] text-[#f87171]">Confirm?</span>
+                <button
+                  onClick={bulkDelete}
+                  disabled={bulkLoading}
+                  className="bg-[#f87171] px-2 py-1 text-[11px] font-medium text-bg"
+                >
+                  Yes
+                </button>
+                <button
+                  onClick={() => setConfirmDelete(false)}
+                  className="px-2 py-1 text-[11px] text-t-muted"
+                >
+                  No
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={() => setConfirmDelete(true)}
+                className="flex items-center gap-1 text-[12px] text-[#f87171] transition-theme hover:text-[#ff9999]"
+              >
+                <Trash2 className="h-3 w-3" /> Delete
+              </button>
+            )}
+            <button
+              onClick={() => { setSelected(new Set()); setConfirmDelete(false); }}
+              className="ml-1 text-[11px] text-t-muted transition-theme hover:text-t-primary"
+            >
+              Clear
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

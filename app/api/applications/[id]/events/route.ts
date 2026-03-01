@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { authenticatedAction } from "@/lib/api-auth";
 import { eventSchema } from "@/lib/validations/application";
+import { logActivity } from "@/lib/activity";
 
 export async function POST(
   req: NextRequest,
@@ -29,6 +30,8 @@ export async function POST(
       applicationId: params.id,
     },
   });
+
+  await logActivity(user.id, params.id, `Event added: ${parsed.data.type}`);
 
   return NextResponse.json(event, { status: 201 });
 }
