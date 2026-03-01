@@ -25,18 +25,11 @@ export default function ResumeFileUpload({ applicationId, currentUrl }: Props) {
     try {
       const fd = new FormData();
       fd.append("file", file);
-      const res = await fetch("/api/upload/resume", { method: "POST", body: fd });
+      const res = await fetch(`/api/applications/${applicationId}/resume`, { method: "POST", body: fd });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
         throw new Error(data.error ?? "Upload failed");
       }
-      const { url } = await res.json();
-
-      await fetch(`/api/applications/${applicationId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ resumeFileUrl: url }),
-      });
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Upload failed");
@@ -78,7 +71,7 @@ export default function ResumeFileUpload({ applicationId, currentUrl }: Props) {
           <input
             ref={inputRef}
             type="file"
-            accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+            accept=".pdf,.doc,.docx,.txt,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain"
             className="hidden"
             onChange={handleUpload}
           />
@@ -116,7 +109,7 @@ export default function ResumeFileUpload({ applicationId, currentUrl }: Props) {
             )}
             <input
               type="file"
-              accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+              accept=".pdf,.doc,.docx,.txt,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain"
               className="hidden"
               onChange={handleUpload}
             />

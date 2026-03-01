@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { formatDistanceToNowStrict } from "date-fns";
@@ -17,6 +18,13 @@ const STATUS_ACCENT: Record<AppStatus, string> = {
   GHOSTED: "#e8e2ed",
 };
 
+function getScoreColor(score: number): string {
+  if (score >= 80) return "#4ade80";
+  if (score >= 60) return "#e8ff47";
+  if (score >= 40) return "#fb923c";
+  return "#f87171";
+}
+
 interface KanbanCardProps {
   id: string;
   company: string;
@@ -24,6 +32,8 @@ interface KanbanCardProps {
   status: AppStatus;
   appliedAt: string | null;
   createdAt: string;
+  resumeMatchScore?: number | null;
+  resumeMatchCriticalCount?: number;
   onClick: () => void;
   /** Stagger delay in seconds for entrance (columnIndex * 0.06 + cardIndex * 0.045) */
   entranceDelay?: number;
@@ -36,9 +46,12 @@ export default function KanbanCard({
   status,
   appliedAt,
   createdAt,
+  resumeMatchScore,
+  resumeMatchCriticalCount = 0,
   onClick,
   entranceDelay = 0,
 }: KanbanCardProps) {
+  const [showTooltip, setShowTooltip] = useState(false);
   const reducedMotion = useReducedMotion();
   const {
     attributes,
@@ -140,6 +153,46 @@ export default function KanbanCard({
           >
             {ago}
           </p>
+          {status === "WISHLIST" && resumeMatchScore != null && (
+            <div
+              className="relative mt-2 flex justify-end"
+              onMouseEnter={() => setShowTooltip(true)}
+              onMouseLeave={() => setShowTooltip(false)}
+            >
+              <svg width={20} height={20} className="shrink-0">
+                <circle
+                  cx={10}
+                  cy={10}
+                  r={8}
+                  fill="none"
+                  stroke="#1e1e1e"
+                  strokeWidth={2}
+                />
+                <circle
+                  cx={10}
+                  cy={10}
+                  r={8}
+                  fill="none"
+                  stroke={getScoreColor(resumeMatchScore)}
+                  strokeWidth={2}
+                  strokeDasharray={50}
+                  strokeDashoffset={50 - (resumeMatchScore / 100) * 50}
+                  strokeLinecap="round"
+                  transform="rotate(-90 10 10)"
+                />
+              </svg>
+              {showTooltip && (
+                <div
+                  className="absolute bottom-full right-0 mb-1 z-10 rounded border border-edge bg-[#111] px-2 py-1 text-[10px] text-t-primary"
+                  style={{ fontFamily: "'DM Sans', sans-serif" }}
+                >
+                  Resume match: {resumeMatchScore}%
+                  {resumeMatchCriticalCount > 0 &&
+                    ` · ${resumeMatchCriticalCount} critical fix${resumeMatchCriticalCount === 1 ? "" : "es"}`}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </motion.div>

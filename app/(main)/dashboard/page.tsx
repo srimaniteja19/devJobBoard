@@ -23,6 +23,21 @@ export default async function DashboardPage() {
     status: a.status,
     appliedAt: a.appliedAt?.toISOString() ?? null,
     createdAt: a.createdAt.toISOString(),
+    resumeMatchScore:
+      a.status === "WISHLIST" && a.resumeMatch
+        ? a.resumeMatch.overallScore
+        : null,
+    resumeMatchCriticalCount:
+      a.status === "WISHLIST" && a.resumeMatch
+        ? (() => {
+            try {
+              const r = JSON.parse(a.resumeMatch.result) as { criticalIssues?: unknown[] };
+              return r?.criticalIssues?.length ?? 0;
+            } catch {
+              return 0;
+            }
+          })()
+        : 0,
   }));
 
   const reminders = followUps.map((f) => ({

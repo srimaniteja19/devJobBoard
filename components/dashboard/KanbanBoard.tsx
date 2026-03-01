@@ -46,6 +46,8 @@ interface AppItem {
   status: string;
   appliedAt: string | null;
   createdAt: string;
+  resumeMatchScore: number | null;
+  resumeMatchCriticalCount: number;
 }
 
 function Column({
@@ -169,6 +171,8 @@ function Column({
                         status={item.status as AppStatus}
                         appliedAt={item.appliedAt}
                         createdAt={item.createdAt}
+                        resumeMatchScore={item.resumeMatchScore}
+                        resumeMatchCriticalCount={item.resumeMatchCriticalCount}
                         onClick={() => onCardClick(item.id)}
                         entranceDelay={entranceDelay}
                       />

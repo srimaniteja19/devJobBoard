@@ -32,6 +32,7 @@ import ResumeFileUpload from "@/components/applications/ResumeFileUpload";
 import SuggestJobs from "@/components/jobs/SuggestJobs";
 import InterviewPrepCoach from "@/components/jobs/InterviewPrepCoach";
 import LinkedInOutreachGenerator from "@/components/applications/LinkedInOutreachGenerator";
+import ResumeMatcher, { type ResumeMatchResult } from "@/components/resume/ResumeMatcher";
 import MarkdownContent from "@/components/ui/MarkdownContent";
 
 interface PageProps {
@@ -185,6 +186,20 @@ export default async function ApplicationDetailPage({ params }: PageProps) {
               </div>
             )}
           </section>
+
+          <ResumeMatcher
+            applicationId={app.id}
+            status={app.status}
+            resumeFileUrl={app.resumeFileUrl}
+            resumeFileName={app.resumeFileName}
+            resumeUploadedAt={app.resumeUploadedAt}
+            resumeText={app.resumeText}
+            initialMatch={
+              app.resumeMatch
+                ? (JSON.parse(app.resumeMatch.result) as ResumeMatchResult)
+                : null
+            }
+          />
 
           <InterviewPrepCoach
             applicationId={app.id}

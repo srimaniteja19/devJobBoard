@@ -100,26 +100,24 @@ export default function AddModal({ open, onClose, initialData }: AddModalProps) 
   const onSubmit = async (data: ApplicationFormData) => {
     setServerError("");
     try {
-      let resumeFileUrl = data.resumeFileUrl;
-      if (resumeFile) {
-        const fd = new FormData();
-        fd.append("file", resumeFile);
-        const upRes = await fetch("/api/upload/resume", { method: "POST", body: fd });
-        if (!upRes.ok) {
-          const err = await upRes.json().catch(() => ({}));
-          throw new Error(err.error ?? "Resume upload failed");
-        }
-        const { url } = await upRes.json();
-        resumeFileUrl = url;
-      }
       const res = await fetch("/api/applications", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...data, resumeFileUrl }),
+        body: JSON.stringify({ ...data, resumeFileUrl: undefined }),
       });
       if (!res.ok) {
         const body = await res.json().catch(() => null);
         throw new Error(body?.error ?? "Failed to save");
+      }
+      const { id } = await res.json();
+      if (resumeFile) {
+        const fd = new FormData();
+        fd.append("file", resumeFile);
+        const upRes = await fetch(`/api/applications/${id}/resume`, { method: "POST", body: fd });
+        if (!upRes.ok) {
+          const err = await upRes.json().catch(() => ({}));
+          throw new Error(err.error ?? "Resume upload failed");
+        }
       }
       onClose();
       router.refresh();
@@ -209,7 +207,7 @@ export default function AddModal({ open, onClose, initialData }: AddModalProps) 
                 </span>
                 <input
                   type="file"
-                  accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                  accept=".pdf,.doc,.docx,.txt,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain"
                   className="hidden"
                   onChange={(e) => setResumeFile(e.target.files?.[0] ?? null)}
                 />

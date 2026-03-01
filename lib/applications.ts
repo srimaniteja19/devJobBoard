@@ -5,6 +5,7 @@ export async function getUserApplications(userId: string) {
   return prisma.application.findMany({
     where: { userId },
     orderBy: { updatedAt: "desc" },
+    include: { resumeMatch: true },
   });
 }
 
@@ -14,6 +15,7 @@ export async function getApplicationById(id: string, userId: string) {
     include: {
       contacts: true,
       events: { orderBy: { scheduledAt: "desc" } },
+      resumeMatch: true,
     },
   });
 }

@@ -59,7 +59,14 @@ export async function PATCH(
   if (body.type !== undefined) updateData.type = body.type;
   if (body.notes !== undefined) updateData.notes = body.notes || null;
   if (body.resumeLabel !== undefined) updateData.resumeLabel = body.resumeLabel || null;
-  if (body.resumeFileUrl !== undefined) updateData.resumeFileUrl = body.resumeFileUrl || null;
+  if (body.resumeFileUrl !== undefined) {
+    updateData.resumeFileUrl = body.resumeFileUrl || null;
+    if (!body.resumeFileUrl) {
+      updateData.resumeFileName = null;
+      updateData.resumeText = null;
+      updateData.resumeUploadedAt = null;
+    }
+  }
   if (body.stack !== undefined) updateData.stack = JSON.stringify(body.stack);
   if (body.appliedAt !== undefined) {
     updateData.appliedAt = body.appliedAt ? new Date(body.appliedAt) : null;
