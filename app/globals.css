@@ -60,6 +60,14 @@
   animation: shimmer 1.5s ease infinite;
 }
 
+@keyframes chat-typing-dot {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 1; }
+}
+.animate-chat-typing {
+  animation: chat-typing-dot 1s ease-in-out infinite;
+}
+
 /* Subtle scrollbars for board */
 .scroll-thin::-webkit-scrollbar {
   height: 6px;

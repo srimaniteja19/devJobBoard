@@ -33,7 +33,10 @@ import SuggestJobs from "@/components/jobs/SuggestJobs";
 import InterviewPrepCoach from "@/components/jobs/InterviewPrepCoach";
 import LinkedInOutreachGenerator from "@/components/applications/LinkedInOutreachGenerator";
 import ResumeMatcher, { type ResumeMatchResult } from "@/components/resume/ResumeMatcher";
+import ResumeBuilder from "@/components/resume/ResumeBuilder";
+import ApplicationJDExtractor from "@/components/applications/ApplicationJDExtractor";
 import MarkdownContent from "@/components/ui/MarkdownContent";
+import JobChat from "@/components/chat/JobChat";
 
 interface PageProps {
   params: { id: string };
@@ -53,13 +56,15 @@ export default async function ApplicationDetailPage({ params }: PageProps) {
 
   return (
     <div className="container mx-auto max-w-4xl px-4 py-4 sm:py-6">
-      <Link
-        href="/dashboard"
-        className="mb-4 inline-flex items-center gap-1.5 text-[13px] font-light text-t-muted transition-theme hover:text-t-primary sm:mb-6"
-      >
-        <ArrowLeft className="h-3.5 w-3.5" />
-        Back
-      </Link>
+      <div>
+        <div className="min-w-0">
+          <Link
+            href="/dashboard"
+            className="mb-4 inline-flex items-center gap-1.5 text-[13px] font-light text-t-muted transition-theme hover:text-t-primary sm:mb-6"
+          >
+            <ArrowLeft className="h-3.5 w-3.5" />
+            Back
+          </Link>
 
       {/* Header card */}
       <div className="border border-edge bg-surface p-4 sm:p-6">
@@ -135,10 +140,28 @@ export default async function ApplicationDetailPage({ params }: PageProps) {
         )}
       </div>
 
+      {/* Job Coach — inline below header */}
+      <div className="mt-4 sm:mt-6">
+        <JobChat
+          applicationId={app.id}
+          role={app.role}
+          company={app.company}
+          status={app.status}
+          hasResume={!!(app.resumeText?.trim())}
+          hasJd={!!(app.notes?.trim())}
+          variant="inline"
+        />
+      </div>
+
       {/* Content grid — stacks on mobile */}
       <div className="mt-4 grid gap-4 sm:mt-6 sm:gap-6 lg:grid-cols-[1fr_300px]">
         <div className="space-y-4 sm:space-y-6">
           <section className="border border-edge bg-surface p-4 sm:p-6">
+            <ApplicationJDExtractor
+              applicationId={app.id}
+              jobUrl={app.jobUrl}
+              initialNotes={app.notes}
+            />
             <h2 className="mb-2 text-[11px] font-medium uppercase tracking-widest text-t-muted sm:mb-3">
               Notes
             </h2>
@@ -200,6 +223,17 @@ export default async function ApplicationDetailPage({ params }: PageProps) {
                 : null
             }
           />
+
+          {(app.status === "WISHLIST" || app.status === "APPLIED") && (
+            <ResumeBuilder
+              applicationId={app.id}
+              hasResume={!!app.resumeText}
+              hasNotes={!!(app.notes?.trim())}
+              resumeFileName={app.resumeFileName}
+              resumeMatchScoreBefore={app.resumeMatch?.overallScore ?? null}
+              resumeMatchScoreAfter={null}
+            />
+          )}
 
           <InterviewPrepCoach
             applicationId={app.id}
@@ -272,6 +306,8 @@ export default async function ApplicationDetailPage({ params }: PageProps) {
       </div>
 
       <SuggestJobs applicationId={app.id} company={app.company} />
+        </div>
+      </div>
     </div>
   );
 }

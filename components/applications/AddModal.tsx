@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { X, Loader2, Plus, FileText } from "lucide-react";
+import JDExtractor from "@/components/resume/JDExtractor";
 import { applicationSchema, type ApplicationFormData } from "@/lib/validations/application";
 import { LOCATION_LABELS, STATUS_LABELS, KANBAN_COLUMNS, type LocationType } from "@/types";
 import StackTagInput from "@/components/ui/StackTagInput";
@@ -39,12 +40,15 @@ export default function AddModal({ open, onClose, initialData }: AddModalProps) 
   const [serverError, setServerError] = useState("");
 
   const [resumeFile, setResumeFile] = useState<File | null>(null);
+  const [jdAutoFilled, setJdAutoFilled] = useState(false);
 
   const {
     register,
     handleSubmit,
     control,
     reset,
+    setValue,
+    watch,
     formState: { errors, isSubmitting },
   } = useForm<ApplicationFormData>({
     resolver: zodResolver(applicationSchema),
@@ -63,6 +67,8 @@ export default function AddModal({ open, onClose, initialData }: AddModalProps) 
     },
   });
 
+  const watchedJobUrl = watch("jobUrl");
+
   useEffect(() => {
     if (open) {
       reset({
@@ -80,6 +86,7 @@ export default function AddModal({ open, onClose, initialData }: AddModalProps) 
       });
       setResumeFile(null);
       setServerError("");
+      setJdAutoFilled(false);
     }
   }, [open, reset, initialData]);
 
@@ -159,7 +166,21 @@ export default function AddModal({ open, onClose, initialData }: AddModalProps) 
           </div>
 
           <Fld label="Job URL" error={errors.jobUrl?.message}>
-            <input {...register("jobUrl")} placeholder="https://..." className={ic(errors.jobUrl)} />
+            <JDExtractor
+              jobUrl={watchedJobUrl ?? ""}
+              onJobUrlChange={(url) => setValue("jobUrl", url)}
+              onExtracted={(data) => {
+                setValue("company", data.company);
+                setValue("role", data.jobTitle);
+                setValue("location", data.location);
+                setValue("type", data.type);
+                setValue("salary", data.salary);
+                setValue("notes", data.notes);
+                if (data.techStack?.length) setValue("stack", data.techStack);
+                setJdAutoFilled(true);
+              }}
+              disabled={false}
+            />
           </Fld>
 
           <div className="grid gap-3 grid-cols-3">
@@ -226,6 +247,11 @@ export default function AddModal({ open, onClose, initialData }: AddModalProps) 
           </Fld>
 
           <Fld label="Notes">
+            {jdAutoFilled && (
+              <p className="mb-1 text-[10px] text-t-muted">
+                Auto-filled from URL · Edit freely
+              </p>
+            )}
             <textarea
               {...register("notes")}
               rows={2}
