@@ -5,9 +5,18 @@ import { authenticatedAction } from "@/lib/api-auth";
 const MAX_SIZE = 5 * 1024 * 1024; // 5MB
 const ALLOWED = ["application/pdf", "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"];
 
+const BLOB_TOKEN = process.env.BLOB_READ_WRITE_TOKEN;
+
 export async function POST(req: NextRequest) {
   const { user, unauthorized } = await authenticatedAction();
   if (unauthorized) return unauthorized;
+
+  if (!BLOB_TOKEN) {
+    return NextResponse.json(
+      { error: "Resume upload not configured. Add BLOB_READ_WRITE_TOKEN to enable file uploads. Create a Blob store in Vercel Dashboard → Storage." },
+      { status: 503 }
+    );
+  }
 
   try {
     const formData = await req.formData();

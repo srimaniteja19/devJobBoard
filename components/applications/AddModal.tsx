@@ -19,6 +19,14 @@ const RESUME_PRESETS = [
   "DevOps",
 ];
 
+function getLocalDateString(): string {
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+
 interface AddModalProps {
   open: boolean;
   onClose: () => void;
@@ -50,7 +58,7 @@ export default function AddModal({ open, onClose, initialData }: AddModalProps) 
       stack: [],
       status: "APPLIED",
       resumeLabel: "",
-      appliedAt: new Date().toISOString().slice(0, 10),
+      appliedAt: getLocalDateString(),
       notes: "",
     },
   });
@@ -67,7 +75,7 @@ export default function AddModal({ open, onClose, initialData }: AddModalProps) 
         stack: [],
         status: "APPLIED",
         resumeLabel: "",
-        appliedAt: new Date().toISOString().slice(0, 10),
+        appliedAt: getLocalDateString(),
         notes: "",
       });
       setResumeFile(null);

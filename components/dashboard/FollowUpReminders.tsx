@@ -31,7 +31,10 @@ export default function FollowUpReminders({ reminders }: { reminders: Reminder[]
       </div>
       <div className="space-y-1.5">
         {reminders.map((r) => {
-          const due = new Date(r.followUpDate).getTime();
+          const [y, m, d] = r.followUpDate.split("-").map(Number);
+          const dueDate = new Date(y, m - 1, d);
+          dueDate.setHours(0, 0, 0, 0);
+          const due = dueDate.getTime();
           let color = "#e8ff47";
           let label = "Tomorrow";
 
@@ -42,6 +45,13 @@ export default function FollowUpReminders({ reminders }: { reminders: Reminder[]
           } else if (due === today) {
             color = "#fb923c";
             label = "Today";
+          } else if (due === tomorrow) {
+            color = "#e8ff47";
+            label = "Tomorrow";
+          } else {
+            const days = Math.ceil((due - today) / 86400000);
+            color = "#e8ff47";
+            label = `In ${days}d`;
           }
 
           return (
