@@ -32,12 +32,14 @@ export default function SuggestJobs({ applicationId, company }: Props) {
       const data = await res.json().catch(() => ({}));
 
       if (!res.ok) {
-        setErrorMessage(data.error ?? `Request failed (${res.status})`);
+        setErrorMessage(typeof data.error === "string" ? data.error : `Request failed (${res.status})`);
         setStatus("error");
         return;
       }
 
-      if (data.error === "parse_failed" || data.error === "no_results") {
+      const hasError = data.error && (data.errorCode === "parse_failed" || data.errorCode === "no_results" || data.errorCode === "search_failed");
+      if (hasError) {
+        setErrorMessage(typeof data.error === "string" ? data.error : null);
         setStatus(data.jobs?.length ? "success" : "error");
         setJobs(data.jobs ?? []);
         setExtractedContext(data.extractedContext ?? null);
@@ -46,6 +48,7 @@ export default function SuggestJobs({ applicationId, company }: Props) {
 
       setJobs(data.jobs ?? []);
       setExtractedContext(data.extractedContext ?? null);
+      setErrorMessage(null);
       setStatus("success");
 
       setCooldown(true);
@@ -92,7 +95,7 @@ export default function SuggestJobs({ applicationId, company }: Props) {
 
       {status === "success" && jobs.length === 0 && (
         <p className="text-[13px] font-light text-t-faint">
-          No similar roles found at {company} in the USA right now.
+          {errorMessage ?? `No similar roles at ${company} or other companies from careers sites, Hiring Cafe, LinkedIn, Greenhouse, or Ashby in the last 24 hours.`}
         </p>
       )}
 
@@ -100,7 +103,7 @@ export default function SuggestJobs({ applicationId, company }: Props) {
         <div className="mt-4 rounded-md border border-edge bg-[#0d0d0d] p-5">
           <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
             <h3 className="text-[13px] font-medium text-t-primary">
-              Similar roles at {company}
+              Similar roles at {company} & other companies
             </h3>
             <div className="flex flex-wrap gap-1">
               {extractedContext?.coreSkills?.slice(0, 4).map((s) => (
@@ -114,7 +117,7 @@ export default function SuggestJobs({ applicationId, company }: Props) {
             </div>
           </div>
           <p className="mb-4 text-[11px] font-light text-t-faint">
-            USA only · {jobs.length} open position{jobs.length !== 1 ? "s" : ""} found
+            Company careers + Hiring Cafe, LinkedIn, Greenhouse, Ashby · Similar roles at {company} and other companies · Last 24 hours · {jobs.length} found
           </p>
 
           <div className="space-y-0">
@@ -168,7 +171,7 @@ export default function SuggestJobs({ applicationId, company }: Props) {
       {status === "error" && (
         <div>
           <p className="text-[13px] font-light text-t-faint">
-            {errorMessage ?? "Couldn't find open roles right now."}
+            {errorMessage ?? "Couldn't find open roles. We suggest jobs from company careers sites, Hiring Cafe, LinkedIn, Greenhouse, and Ashby (last 24 hours)."}
           </p>
           <button
             type="button"
