@@ -1,0 +1,30 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    font-family: "DM Mono", ui-monospace, monospace;
+    -webkit-font-smoothing: antialiased;
+  }
+  body {
+    @apply bg-bg text-t-primary font-light;
+  }
+  ::selection {
+    background: #e8ff4730;
+  }
+  input[type="date"]::-webkit-calendar-picker-indicator {
+    filter: invert(0.5);
+  }
+}
+
+@layer utilities {
+  .transition-theme {
+    transition: all 0.15s ease;
+  }
+  .press {
+    @apply active:scale-[0.97] active:duration-100;
+  }
+}
