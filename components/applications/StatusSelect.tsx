@@ -8,9 +8,10 @@ interface StatusSelectProps {
   applicationId: string;
   currentStatus: AppStatus;
   company?: string;
+  prepLinkOnStatusChange?: boolean;
 }
 
-export default function StatusSelect({ applicationId, currentStatus, company }: StatusSelectProps) {
+export default function StatusSelect({ applicationId, currentStatus, company, prepLinkOnStatusChange }: StatusSelectProps) {
   const [status, setStatus] = useState(currentStatus);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
@@ -29,7 +30,16 @@ export default function StatusSelect({ applicationId, currentStatus, company }: 
       if (!res.ok) {
         setStatus(prev);
       } else {
-        toast(`${company || "Application"} → ${STATUS_LABELS[newStatus as AppStatus]}`);
+        if (prepLinkOnStatusChange) {
+          toast("Stage updated → new prep available", {
+            action: {
+              label: "Open Prep →",
+              onClick: () => document.getElementById("prep-section")?.scrollIntoView({ behavior: "smooth" }),
+            },
+          });
+        } else {
+          toast(`${company || "Application"} → ${STATUS_LABELS[newStatus as AppStatus]}`);
+        }
       }
     } catch {
       setStatus(prev);

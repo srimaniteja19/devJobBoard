@@ -12,7 +12,7 @@ import {
   User,
 } from "lucide-react";
 import { getCurrentUser } from "@/lib/session";
-import { getApplicationById } from "@/lib/applications";
+import { getApplicationById, getPrepsForStage } from "@/lib/applications";
 import {
   STATUS_LABELS,
   STATUS_COLORS,
@@ -30,6 +30,7 @@ import DeleteButton from "@/components/applications/DeleteButton";
 import FollowUpPicker from "@/components/applications/FollowUpPicker";
 import ResumeFileUpload from "@/components/applications/ResumeFileUpload";
 import SuggestJobs from "@/components/jobs/SuggestJobs";
+import InterviewPrepCoach from "@/components/jobs/InterviewPrepCoach";
 import MarkdownContent from "@/components/ui/MarkdownContent";
 
 interface PageProps {
@@ -42,6 +43,8 @@ export default async function ApplicationDetailPage({ params }: PageProps) {
 
   const app = await getApplicationById(params.id, user.id);
   if (!app) notFound();
+
+  const initialPreps = await getPrepsForStage(params.id, user.id, app.status);
 
   const stackTags = parseStack(app.stack);
   const locationType = LOCATION_LABELS[app.type as LocationType] ?? app.type;
@@ -64,7 +67,7 @@ export default async function ApplicationDetailPage({ params }: PageProps) {
             <p className="mt-0.5 text-[14px] font-light text-t-muted sm:mt-1 sm:text-[16px]">{app.company}</p>
           </div>
           <div className="flex items-center gap-2 sm:gap-3">
-            <StatusSelect applicationId={app.id} currentStatus={app.status as AppStatus} company={app.company} />
+            <StatusSelect applicationId={app.id} currentStatus={app.status as AppStatus} company={app.company} prepLinkOnStatusChange />
             <DeleteButton applicationId={app.id} />
           </div>
         </div>
@@ -181,6 +184,14 @@ export default async function ApplicationDetailPage({ params }: PageProps) {
               </div>
             )}
           </section>
+
+          <InterviewPrepCoach
+            applicationId={app.id}
+            company={app.company}
+            role={app.role}
+            currentStatus={app.status}
+            initialPreps={initialPreps ?? undefined}
+          />
         </div>
 
         <div className="space-y-4 sm:space-y-6">

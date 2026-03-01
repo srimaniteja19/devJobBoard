@@ -88,6 +88,7 @@ model Application {
   contacts   Contact[]
   events     Event[]
   activities ActivityLog[]
+  preps      ApplicationPrep[]
 
   @@index([userId])
   @@index([status])
@@ -135,4 +136,19 @@ model ActivityLog {
 
   @@index([userId, createdAt])
   @@index([applicationId])
+}
+
+model ApplicationPrep {
+  id            String   @id @default(cuid())
+  applicationId String
+  stage         String
+  sectionKey    String
+  content       String
+  generatedAt   DateTime @default(now())
+
+  application Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
+  @@unique([applicationId, stage, sectionKey])
+  @@index([applicationId])
+  @@index([applicationId, stage])
 }

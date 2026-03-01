@@ -22,6 +22,27 @@ export type ApplicationWithRelations = NonNullable<
   Awaited<ReturnType<typeof getApplicationById>>
 >;
 
+export async function getPrepsForStage(
+  applicationId: string,
+  userId: string,
+  stage: string
+): Promise<Record<string, unknown> | null> {
+  const app = await prisma.application.findFirst({
+    where: { id: applicationId, userId },
+    include: { preps: { where: { stage } } },
+  });
+  if (!app) return null;
+  const result: Record<string, unknown> = {};
+  for (const p of app.preps) {
+    try {
+      result[p.sectionKey] = JSON.parse(p.content);
+    } catch {
+      result[p.sectionKey] = p.content;
+    }
+  }
+  return result;
+}
+
 export async function getApplicationStats(userId: string) {
   const apps = await prisma.application.findMany({
     where: { userId },

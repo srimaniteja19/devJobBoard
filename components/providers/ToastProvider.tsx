@@ -2,14 +2,20 @@
 
 import { createContext, useContext, useState, useCallback } from "react";
 
+interface ToastAction {
+  label: string;
+  onClick: () => void;
+}
+
 interface Toast {
   id: string;
   message: string;
   accent?: string;
+  action?: ToastAction;
 }
 
 interface ToastCtx {
-  toast: (message: string, accent?: string) => void;
+  toast: (message: string, accentOrOptions?: string | { accent?: string; action?: ToastAction }) => void;
 }
 
 const ToastContext = createContext<ToastCtx>({ toast: () => {} });
@@ -21,9 +27,11 @@ export function useToast() {
 export default function ToastProvider({ children }: { children: React.ReactNode }) {
   const [toasts, setToasts] = useState<Toast[]>([]);
 
-  const addToast = useCallback((message: string, accent?: string) => {
+  const addToast = useCallback((message: string, accentOrOptions?: string | { accent?: string; action?: ToastAction }) => {
     const id = Math.random().toString(36).slice(2);
-    setToasts((prev) => [...prev, { id, message, accent }]);
+    const accent = typeof accentOrOptions === "string" ? accentOrOptions : accentOrOptions?.accent;
+    const action = typeof accentOrOptions === "object" ? accentOrOptions?.action : undefined;
+    setToasts((prev) => [...prev, { id, message, accent, action }]);
     setTimeout(() => {
       setToasts((prev) => prev.filter((t) => t.id !== id));
     }, 2500);
@@ -43,7 +51,18 @@ export default function ToastProvider({ children }: { children: React.ReactNode 
               className="h-1.5 w-1.5 shrink-0 rounded-full"
               style={{ backgroundColor: t.accent || "#e8ff47" }}
             />
-            {t.message}
+            <span>{t.message}</span>
+            {t.action && (
+              <button
+                type="button"
+                onClick={() => {
+                  t.action?.onClick();
+                }}
+                className="shrink-0 font-medium text-accent transition-colors hover:text-accent-hover"
+              >
+                {t.action.label}
+              </button>
+            )}
           </div>
         ))}
       </div>
