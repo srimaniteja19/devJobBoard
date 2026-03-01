@@ -1,5 +1,6 @@
 "use client";
 
+import { Suspense } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { LayoutDashboard, Table2, BarChart3, Activity } from "lucide-react";
@@ -49,7 +50,9 @@ export default function MainLayout({
                   </Link>
                 );
               })}
-              <AddButton variant="nav" />
+              <Suspense fallback={<span className="px-2.5 py-1.5 text-[13px] text-t-muted">Add</span>}>
+                <AddButton variant="nav" />
+              </Suspense>
               <button
                 onClick={() => setOpen(true)}
                 className="ml-1 flex items-center gap-1 border border-edge px-2 py-1 text-[10px] text-t-faint transition-theme hover:border-edge-hover hover:text-t-muted"
@@ -83,7 +86,9 @@ export default function MainLayout({
           );
         })}
         <div className="flex flex-1 flex-col items-center gap-0.5 py-2.5">
-          <AddButton variant="mobile" />
+          <Suspense fallback={<span className="text-[10px] text-t-muted">Add</span>}>
+            <AddButton variant="mobile" />
+          </Suspense>
         </div>
       </nav>
     </div>

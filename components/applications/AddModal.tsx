@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { X, Loader2, Plus } from "lucide-react";
+import { X, Loader2, Plus, FileText } from "lucide-react";
 import { applicationSchema, type ApplicationFormData } from "@/lib/validations/application";
 import { LOCATION_LABELS, STATUS_LABELS, KANBAN_COLUMNS, type LocationType } from "@/types";
 import StackTagInput from "@/components/ui/StackTagInput";
@@ -22,12 +22,15 @@ const RESUME_PRESETS = [
 interface AddModalProps {
   open: boolean;
   onClose: () => void;
+  initialData?: { company?: string; role?: string } | null;
 }
 
-export default function AddModal({ open, onClose }: AddModalProps) {
+export default function AddModal({ open, onClose, initialData }: AddModalProps) {
   const router = useRouter();
   const overlayRef = useRef<HTMLDivElement>(null);
   const [serverError, setServerError] = useState("");
+
+  const [resumeFile, setResumeFile] = useState<File | null>(null);
 
   const {
     register,
@@ -54,10 +57,23 @@ export default function AddModal({ open, onClose }: AddModalProps) {
 
   useEffect(() => {
     if (open) {
-      reset();
+      reset({
+        company: initialData?.company ?? "",
+        role: initialData?.role ?? "",
+        jobUrl: "",
+        salary: "",
+        location: "",
+        type: "REMOTE",
+        stack: [],
+        status: "APPLIED",
+        resumeLabel: "",
+        appliedAt: new Date().toISOString().slice(0, 10),
+        notes: "",
+      });
+      setResumeFile(null);
       setServerError("");
     }
-  }, [open, reset]);
+  }, [open, reset, initialData]);
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -76,10 +92,22 @@ export default function AddModal({ open, onClose }: AddModalProps) {
   const onSubmit = async (data: ApplicationFormData) => {
     setServerError("");
     try {
+      let resumeFileUrl = data.resumeFileUrl;
+      if (resumeFile) {
+        const fd = new FormData();
+        fd.append("file", resumeFile);
+        const upRes = await fetch("/api/upload/resume", { method: "POST", body: fd });
+        if (!upRes.ok) {
+          const err = await upRes.json().catch(() => ({}));
+          throw new Error(err.error ?? "Resume upload failed");
+        }
+        const { url } = await upRes.json();
+        resumeFileUrl = url;
+      }
       const res = await fetch("/api/applications", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
+        body: JSON.stringify({ ...data, resumeFileUrl }),
       });
       if (!res.ok) {
         const body = await res.json().catch(() => null);
@@ -153,17 +181,33 @@ export default function AddModal({ open, onClose }: AddModalProps) {
             </Fld>
           </div>
 
-          <Fld label="Resume Used" error={errors.resumeLabel?.message}>
-            <input
-              {...register("resumeLabel")}
-              placeholder="e.g. Frontend v2"
-              list="resume-presets"
-              className={ic()}
-            />
-            <datalist id="resume-presets">
-              {RESUME_PRESETS.map((r) => <option key={r} value={r} />)}
-            </datalist>
-          </Fld>
+          <div className="grid gap-3 grid-cols-2">
+            <Fld label="Resume Label" error={errors.resumeLabel?.message}>
+              <input
+                {...register("resumeLabel")}
+                placeholder="e.g. Frontend v2"
+                list="resume-presets"
+                className={ic()}
+              />
+              <datalist id="resume-presets">
+                {RESUME_PRESETS.map((r) => <option key={r} value={r} />)}
+              </datalist>
+            </Fld>
+            <Fld label="Resume File (optional)">
+              <label className="flex cursor-pointer items-center gap-2 border border-edge bg-bg px-3 py-2 text-[13px] text-t-primary transition-theme focus-within:border-accent hover:border-edge-hover">
+                <FileText className="h-3.5 w-3.5 shrink-0 text-t-faint" />
+                <span className="truncate text-t-muted">
+                  {resumeFile ? resumeFile.name : "PDF or DOC"}
+                </span>
+                <input
+                  type="file"
+                  accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                  className="hidden"
+                  onChange={(e) => setResumeFile(e.target.files?.[0] ?? null)}
+                />
+              </label>
+            </Fld>
+          </div>
 
           <Fld label="Tech Stack" error={errors.stack?.message}>
             <Controller

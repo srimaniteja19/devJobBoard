@@ -76,8 +76,9 @@ model Application {
   type         String    @default("REMOTE")
   stack        String    @default("[]")
   status       String    @default("WISHLIST")
-  resumeLabel  String?
-  appliedAt    DateTime?
+  resumeLabel   String?
+  resumeFileUrl String?
+  appliedAt     DateTime?
   followUpDate DateTime?
   notes        String?
   createdAt    DateTime  @default(now())

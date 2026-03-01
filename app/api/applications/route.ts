@@ -51,6 +51,7 @@ export async function POST(req: NextRequest) {
       salary: data.salary || null,
       location: data.location || null,
       resumeLabel: data.resumeLabel || null,
+      resumeFileUrl: data.resumeFileUrl || null,
       notes: data.notes || null,
       stack: JSON.stringify(stack),
       appliedAt: appliedAt ? new Date(appliedAt) : null,

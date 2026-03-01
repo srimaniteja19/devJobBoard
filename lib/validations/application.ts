@@ -15,6 +15,7 @@ export const applicationSchema = z.object({
     .enum(["WISHLIST", "APPLIED", "SCREENING", "INTERVIEW", "OFFER", "REJECTED", "GHOSTED"])
     .default("APPLIED"),
   resumeLabel: optionalStr,
+  resumeFileUrl: optionalUrl,
   appliedAt: optionalStr,
   notes: optionalStr,
 });

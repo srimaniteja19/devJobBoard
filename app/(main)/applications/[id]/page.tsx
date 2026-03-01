@@ -28,6 +28,8 @@ import AddEventForm from "@/components/applications/AddEventForm";
 import AddContactForm from "@/components/applications/AddContactForm";
 import DeleteButton from "@/components/applications/DeleteButton";
 import FollowUpPicker from "@/components/applications/FollowUpPicker";
+import ResumeFileUpload from "@/components/applications/ResumeFileUpload";
+import SuggestJobs from "@/components/jobs/SuggestJobs";
 import MarkdownContent from "@/components/ui/MarkdownContent";
 
 interface PageProps {
@@ -95,13 +97,14 @@ export default async function ApplicationDetailPage({ params }: PageProps) {
           />
         </div>
 
-        {app.resumeLabel && (
-          <div className="mt-2 sm:mt-3">
+        <div className="mt-2 flex flex-wrap items-start gap-x-6 gap-y-2 sm:mt-3">
+          {app.resumeLabel && (
             <span className="inline-flex items-center gap-1.5 bg-[#1a1528] px-2 py-0.5 text-[10px] font-medium text-[#a78bfa] sm:px-2.5 sm:py-1 sm:text-[11px]">
               Resume: {app.resumeLabel}
             </span>
-          </div>
-        )}
+          )}
+          <ResumeFileUpload applicationId={app.id} currentUrl={app.resumeFileUrl} />
+        </div>
 
         {stackTags.length > 0 && (
           <div className="mt-3 flex flex-wrap gap-1 sm:mt-4 sm:gap-1.5">
@@ -234,6 +237,8 @@ export default async function ApplicationDetailPage({ params }: PageProps) {
           </section>
         </div>
       </div>
+
+      <SuggestJobs applicationId={app.id} company={app.company} />
     </div>
   );
 }

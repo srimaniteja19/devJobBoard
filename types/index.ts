@@ -81,3 +81,12 @@ export const STACK_OPTIONS = [
   "TypeScript", "Ruby", "PHP", "Swift", "Kotlin",
   "AWS", "Docker", "Kubernetes", "GraphQL", "PostgreSQL",
 ] as const;
+
+export interface SuggestedJob {
+  title: string;
+  company: string;
+  location: string;
+  url: string;
+  matchReason: string;
+  postedRecency: string;
+}
