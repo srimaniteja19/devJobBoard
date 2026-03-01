@@ -16,6 +16,7 @@ import {
 } from "recharts";
 import { STATUS_LABELS, type AppStatus } from "@/types";
 import ActivityHeatmap from "./ActivityHeatmap";
+import SankeyPipeline from "./SankeyPipeline";
 
 const STATUS_PIE_COLORS: Record<string, string> = {
   WISHLIST: "#555555",
@@ -78,6 +79,9 @@ export default function StatsCharts({
         <RateCard label="Interview Conversion" subtitle="Applied → Interview" value={`${interviewConversion}%`} />
         <RateCard label="Avg Days to Response" subtitle="Applied → first update" value={`${avgDaysToResponse}d`} />
       </div>
+
+      {/* Sankey pipeline — where you're losing candidates */}
+      <SankeyPipeline funnel={funnel} />
 
       {/* Applications over time — area chart */}
       <div className="grid gap-4 sm:gap-6 lg:grid-cols-2">
@@ -152,24 +156,6 @@ export default function StatsCharts({
           )}
         </div>
       </div>
-
-      {/* Status funnel */}
-      {funnel.some((f) => f.count > 0) && (
-        <div className="border border-edge bg-surface p-4 sm:p-5">
-          <h3 className="mb-3 text-[11px] font-medium uppercase tracking-widest text-t-muted sm:mb-4">
-            Status Funnel
-          </h3>
-          <ResponsiveContainer width="100%" height={160}>
-            <BarChart data={funnel} layout="vertical">
-              <CartesianGrid strokeDasharray="3 3" stroke="#1a1a1a" />
-              <XAxis type="number" tick={{ fontSize: 10, fill: "#555" }} allowDecimals={false} stroke="#1a1a1a" />
-              <YAxis type="category" dataKey="stage" tick={{ fontSize: 10, fill: "#555" }} width={70} stroke="#1a1a1a" />
-              <Tooltip contentStyle={tooltipStyle} />
-              <Bar dataKey="count" fill="#e8ff47" radius={[0, 2, 2, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-      )}
 
       {/* Response rate by stack + best day of week */}
       <div className="grid gap-4 sm:gap-6 lg:grid-cols-2">

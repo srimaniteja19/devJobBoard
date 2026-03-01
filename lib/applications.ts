@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/db";
-import type { AppStatus } from "@/types";
+import { EVENT_LABELS, type AppStatus } from "@/types";
 
 export async function getUserApplications(userId: string) {
   return prisma.application.findMany({
@@ -265,4 +265,85 @@ export async function getOverdueCount(userId: string) {
       status: { in: ["APPLIED", "SCREENING"] },
     },
   });
+}
+
+export interface CalendarItem {
+  id: string;
+  type: "follow_up" | "event";
+  date: string; // YYYY-MM-DD
+  title: string;
+  subtitle?: string;
+  applicationId: string;
+  status: string;
+  eventType?: string;
+}
+
+export async function getCalendarItems(
+  userId: string,
+  startDate: Date,
+  endDate: Date
+): Promise<CalendarItem[]> {
+  const start = new Date(startDate);
+  start.setHours(0, 0, 0, 0);
+  const end = new Date(endDate);
+  end.setHours(23, 59, 59, 999);
+
+  const [appsWithFollowUp, events] = await Promise.all([
+    prisma.application.findMany({
+      where: {
+        userId,
+        followUpDate: { gte: start, lte: end },
+      },
+      select: {
+        id: true,
+        company: true,
+        role: true,
+        status: true,
+        followUpDate: true,
+      },
+    }),
+    prisma.event.findMany({
+      where: {
+        scheduledAt: { gte: start, lte: end },
+        application: { userId },
+      },
+      include: {
+        application: { select: { id: true, company: true, role: true, status: true } },
+      },
+    }),
+  ]);
+
+  const items: CalendarItem[] = [];
+
+  for (const app of appsWithFollowUp) {
+    if (!app.followUpDate) continue;
+    items.push({
+      id: `follow-${app.id}`,
+      type: "follow_up",
+      date: app.followUpDate.toISOString().slice(0, 10),
+      title: `Follow up: ${app.company}`,
+      subtitle: app.role,
+      applicationId: app.id,
+      status: app.status,
+    });
+  }
+
+  for (const event of events) {
+    if (!event.application) continue;
+    const app = event.application;
+    const eventLabel =
+      (event.type && EVENT_LABELS[event.type as keyof typeof EVENT_LABELS]) ?? event.type ?? "Event";
+    items.push({
+      id: event.id,
+      type: "event",
+      date: event.scheduledAt.toISOString().slice(0, 10),
+      title: `${eventLabel}: ${app.company}`,
+      subtitle: app.role,
+      applicationId: app.id,
+      status: app.status,
+      eventType: event.type,
+    });
+  }
+
+  return items.sort((a, b) => a.date.localeCompare(b.date) || a.title.localeCompare(b.title));
 }

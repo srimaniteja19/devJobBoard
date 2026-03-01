@@ -40,9 +40,7 @@ export async function POST(req: NextRequest) {
     const ext = file.name.split(".").pop() ?? "pdf";
     const name = `resume-${user.id}-${Date.now()}.${ext}`;
 
-    const blob = await put(name, file, {
-      access: "public",
-    });
+    const blob = await put(name, file, { access: "public" });
 
     return NextResponse.json({ url: blob.url });
   } catch (e) {

@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { authenticatedAction } from "@/lib/api-auth";
 import { generateJson } from "@/lib/gemini";
 import { getPrepPrompt } from "@/lib/prep-prompts";
+import { extractResumeText } from "@/lib/resume-text";
 import type { AppStatus } from "@/types";
 
 function parseStack(stack: string): string[] {
@@ -49,6 +50,9 @@ export async function POST(
     }
 
     const stack = parseStack(app.stack);
+    const resumeText = app.resumeFileUrl
+      ? await extractResumeText(app.resumeFileUrl)
+      : "";
     const ctx = {
       role: app.role,
       company: app.company,
@@ -57,7 +61,7 @@ export async function POST(
       stack,
       salary: app.salary,
       notes: (app.notes ?? "").slice(0, 3000),
-      resumeText: "not provided",
+      resumeText: resumeText || "not provided",
       status: stage,
     };
 
