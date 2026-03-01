@@ -6,6 +6,7 @@ import {
   getAdvancedStats,
 } from "@/lib/applications";
 import StatsCharts from "@/components/stats/StatsCharts";
+import BlindSpotDetector from "@/components/stats/BlindSpotDetector";
 
 export default async function StatsPage() {
   const user = await getCurrentUser();
@@ -24,6 +25,10 @@ export default async function StatsPage() {
         <p className="text-[12px] font-light text-t-muted sm:text-[13px]">
           Insights into your job search
         </p>
+      </div>
+
+      <div className="mb-6">
+        <BlindSpotDetector />
       </div>
 
       <StatsCharts

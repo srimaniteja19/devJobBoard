@@ -31,6 +31,7 @@ import FollowUpPicker from "@/components/applications/FollowUpPicker";
 import ResumeFileUpload from "@/components/applications/ResumeFileUpload";
 import SuggestJobs from "@/components/jobs/SuggestJobs";
 import InterviewPrepCoach from "@/components/jobs/InterviewPrepCoach";
+import LinkedInOutreachGenerator from "@/components/applications/LinkedInOutreachGenerator";
 import MarkdownContent from "@/components/ui/MarkdownContent";
 
 interface PageProps {
@@ -230,6 +231,12 @@ export default async function ApplicationDetailPage({ params }: PageProps) {
               </div>
             )}
           </section>
+
+          <LinkedInOutreachGenerator
+            applicationId={app.id}
+            company={app.company}
+            role={app.role}
+          />
 
           <section className="border border-edge bg-surface p-4 sm:p-5">
             <h2 className="mb-2 text-[11px] font-medium uppercase tracking-widest text-t-muted sm:mb-3">
