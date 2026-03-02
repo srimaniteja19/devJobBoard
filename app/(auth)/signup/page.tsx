@@ -3,30 +3,50 @@
 import Link from "next/link";
 import { signIn } from "next-auth/react";
 import { useState } from "react";
-import { Loader2, LogIn, Github } from "lucide-react";
+import { Loader2, UserPlus, Github } from "lucide-react";
 
-export default function LoginPage() {
+export default function SignUpPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [name, setName] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const handleCredentials = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email.trim() || !password) return;
+    setError("");
+    if (password !== confirmPassword) {
+      setError("Passwords do not match");
+      return;
+    }
+    if (password.length < 8) {
+      setError("Password must be at least 8 characters");
+      return;
+    }
 
     setLoading(true);
-    setError("");
-
-    const res = await signIn("credentials", {
-      email: email.trim(),
-      password,
-      callbackUrl: "/dashboard",
-      redirect: true,
-    });
-
-    if (res?.error) {
-      setError("Invalid email or password");
+    try {
+      const res = await fetch("/api/auth/signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: email.trim(), password, name: name.trim() }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || "Sign up failed");
+        setLoading(false);
+        return;
+      }
+      // Sign in after successful signup
+      await signIn("credentials", {
+        email: email.trim(),
+        password,
+        callbackUrl: "/dashboard",
+        redirect: true,
+      });
+    } catch {
+      setError("Something went wrong. Please try again.");
       setLoading(false);
     }
   };
@@ -34,9 +54,9 @@ export default function LoginPage() {
   return (
     <div className="w-full max-w-md space-y-6 border border-edge bg-surface p-8">
       <div className="space-y-2 text-center">
-        <h1 className="text-xl font-medium text-t-primary">Sign in</h1>
+        <h1 className="text-xl font-medium text-t-primary">Sign up</h1>
         <p className="text-[13px] font-light text-t-muted">
-          Enter your email and password
+          Create an account to get started
         </p>
       </div>
 
@@ -46,7 +66,7 @@ export default function LoginPage() {
         </div>
       )}
 
-      <form onSubmit={handleCredentials} className="space-y-3">
+      <form onSubmit={handleSubmit} className="space-y-3">
         <div>
           <label htmlFor="email" className="block text-[11px] font-medium uppercase tracking-widest text-t-muted">
             Email
@@ -62,6 +82,19 @@ export default function LoginPage() {
           />
         </div>
         <div>
+          <label htmlFor="name" className="block text-[11px] font-medium uppercase tracking-widest text-t-muted">
+            Name <span className="font-light normal-case tracking-normal text-t-faint">(optional)</span>
+          </label>
+          <input
+            id="name"
+            type="text"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="Your name"
+            className="mt-1.5 w-full border border-edge bg-bg px-3 py-2.5 text-[13px] text-t-primary placeholder:text-t-faint focus:border-accent focus:outline-none"
+          />
+        </div>
+        <div>
           <label htmlFor="password" className="block text-[11px] font-medium uppercase tracking-widest text-t-muted">
             Password
           </label>
@@ -69,9 +102,25 @@ export default function LoginPage() {
             id="password"
             type="password"
             required
+            minLength={8}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            placeholder="••••••••"
+            placeholder="At least 8 characters"
+            className="mt-1.5 w-full border border-edge bg-bg px-3 py-2.5 text-[13px] text-t-primary placeholder:text-t-faint focus:border-accent focus:outline-none"
+          />
+        </div>
+        <div>
+          <label htmlFor="confirmPassword" className="block text-[11px] font-medium uppercase tracking-widest text-t-muted">
+            Confirm password
+          </label>
+          <input
+            id="confirmPassword"
+            type="password"
+            required
+            minLength={8}
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            placeholder="Confirm your password"
             className="mt-1.5 w-full border border-edge bg-bg px-3 py-2.5 text-[13px] text-t-primary placeholder:text-t-faint focus:border-accent focus:outline-none"
           />
         </div>
@@ -83,9 +132,9 @@ export default function LoginPage() {
           {loading ? (
             <Loader2 className="h-4 w-4 animate-spin" />
           ) : (
-            <LogIn className="h-4 w-4" />
+            <UserPlus className="h-4 w-4" />
           )}
-          Sign in
+          Sign up
         </button>
       </form>
 
@@ -122,9 +171,9 @@ export default function LoginPage() {
       </div>
 
       <p className="text-center text-[13px] font-light text-t-muted">
-        Don&apos;t have an account?{" "}
-        <Link href="/signup" className="font-medium text-accent hover:text-accent-hover">
-          Sign up
+        Already have an account?{" "}
+        <Link href="/login" className="font-medium text-accent hover:text-accent-hover">
+          Sign in
         </Link>
       </p>
     </div>

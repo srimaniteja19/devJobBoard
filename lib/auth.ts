@@ -3,26 +3,25 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import GitHubProvider from "next-auth/providers/github";
 import GoogleProvider from "next-auth/providers/google";
 import { PrismaAdapter } from "@next-auth/prisma-adapter";
+import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/db";
 
 const providers: NextAuthOptions["providers"] = [
   CredentialsProvider({
-    name: "Dev Login",
+    name: "credentials",
     credentials: {
       email: { label: "Email", type: "email", placeholder: "you@example.com" },
-      name: { label: "Name", type: "text", placeholder: "Your name" },
+      password: { label: "Password", type: "password" },
     },
     async authorize(credentials) {
-      if (!credentials?.email) return null;
+      if (!credentials?.email || !credentials?.password) return null;
 
       const email = credentials.email.trim().toLowerCase();
-      const name = credentials.name?.trim() || email.split("@")[0];
+      const user = await prisma.user.findUnique({ where: { email } });
 
-      let user = await prisma.user.findUnique({ where: { email } });
-
-      if (!user) {
-        user = await prisma.user.create({ data: { email, name } });
-      }
+      if (!user?.password) return null;
+      const valid = await bcrypt.compare(credentials.password, user.password);
+      if (!valid) return null;
 
       return { id: user.id, email: user.email, name: user.name };
     },
