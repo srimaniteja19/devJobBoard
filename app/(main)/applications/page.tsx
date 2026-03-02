@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/session";
 import { getUserApplications } from "@/lib/applications";
-import ApplicationsTable from "@/components/applications/ApplicationsTable";
+import ApplicationsPageContent from "@/components/applications/ApplicationsPageContent";
 import AddButton from "@/components/applications/AddButton";
 
 export default async function ApplicationsPage() {
@@ -34,7 +34,7 @@ export default async function ApplicationsPage() {
         </div>
       </div>
 
-      <ApplicationsTable applications={serialized} />
+      <ApplicationsPageContent applications={serialized} />
     </div>
   );
 }
