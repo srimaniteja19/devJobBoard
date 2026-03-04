@@ -1,12 +1,27 @@
 "use client";
 
-import { Suspense } from "react";
+import { Suspense, useEffect } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { LayoutDashboard, Table2, BarChart3, Activity, Calendar } from "lucide-react";
 import AuthButton from "@/components/layout/AuthButton";
 import AddButton from "@/components/applications/AddButton";
 import { useSearch } from "@/components/providers/SearchProvider";
+
+/** Refreshes server data when user switches back to this tab (e.g. after adding a job via extension). */
+function RefreshOnTabFocus() {
+  const router = useRouter();
+  useEffect(() => {
+    const onVisibilityChange = () => {
+      if (document.visibilityState === "visible") {
+        router.refresh();
+      }
+    };
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    return () => document.removeEventListener("visibilitychange", onVisibilityChange);
+  }, [router]);
+  return null;
+}
 
 const NAV_ITEMS = [
   { href: "/dashboard", label: "Board", icon: LayoutDashboard },
@@ -26,6 +41,7 @@ export default function MainLayout({
 
   return (
     <div className="min-h-screen bg-bg pb-16 sm:pb-0">
+      <RefreshOnTabFocus />
       {/* Desktop top nav */}
       <header className="sticky top-0 z-40 border-b border-edge bg-bg">
         <nav className="container mx-auto flex h-12 max-w-6xl items-center justify-between px-4">
