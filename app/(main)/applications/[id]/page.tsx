@@ -27,6 +27,7 @@ import StatusSelect from "@/components/applications/StatusSelect";
 import AddEventForm from "@/components/applications/AddEventForm";
 import AddContactForm from "@/components/applications/AddContactForm";
 import DeleteButton from "@/components/applications/DeleteButton";
+import EditApplicationButton from "@/components/applications/EditApplicationButton";
 import FollowUpPicker from "@/components/applications/FollowUpPicker";
 import ResumeFileUpload from "@/components/applications/ResumeFileUpload";
 import SuggestJobs from "@/components/jobs/SuggestJobs";
@@ -73,7 +74,8 @@ export default async function ApplicationDetailPage({ params }: PageProps) {
             <h1 className="text-[20px] font-medium text-t-primary sm:text-[24px]">{app.role}</h1>
             <p className="mt-0.5 text-[14px] font-light text-t-muted sm:mt-1 sm:text-[16px]">{app.company}</p>
           </div>
-          <div className="flex items-center gap-2 sm:gap-3">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+            <EditApplicationButton application={app} />
             <StatusSelect applicationId={app.id} currentStatus={app.status as AppStatus} company={app.company} prepLinkOnStatusChange />
             <DeleteButton applicationId={app.id} />
           </div>
