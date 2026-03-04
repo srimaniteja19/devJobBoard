@@ -1,36 +1,53 @@
 /* global extractLinkedIn, extractIndeed, extractGreenhouse, extractLever, extractWorkday, extractAshby, extractGeneric */
 
-// ─── LinkedIn (/jobs/view/*) ────────────────────────────────
+// ─── LinkedIn (jobs view + jobs/search right panel) ────────
 
 function extractLinkedIn() {
   const getText = (sel) => document.querySelector(sel)?.innerText?.trim() || '';
+  const getAllText = (sel) => {
+    const el = document.querySelector(sel);
+    return el ? el.innerText.trim() : '';
+  };
 
+  // Job detail panel (same on /jobs/view/ and /jobs/search/ right rail)
   const title = getText('.job-details-jobs-unified-top-card__job-title') ||
     getText('.jobs-unified-top-card__job-title') ||
     getText('.t-24.job-details-jobs-unified-top-card__job-title') ||
     getText('h1.topcard__title') ||
+    getText('.job-details-jobs-unified-top-card__content-container h1') ||
+    getText('.jobs-search__job-details h1') ||
     getText('h1');
 
   const company = getText('.job-details-jobs-unified-top-card__company-name') ||
     getText('.jobs-unified-top-card__company-name') ||
     getText('.topcard__org-name-link') ||
-    getText('a[data-tracking-control-name="public_jobs_topcard-org-name"]');
+    getText('a[data-tracking-control-name="public_jobs_topcard-org-name"]') ||
+    getText('.job-details-jobs-unified-top-card__content-container a[href*="/company/"]') ||
+    getText('.jobs-search__job-details a[href*="/company/"]');
 
   const location = getText('.job-details-jobs-unified-top-card__bullet') ||
     getText('.jobs-unified-top-card__bullet') ||
-    getText('.topcard__flavor--bullet');
+    getText('.topcard__flavor--bullet') ||
+    getText('.job-details-jobs-unified-top-card__primary-description-container span') ||
+    getAllText('.jobs-unified-top-card__primary-description');
 
   const salary = getText('.compensation__salary-range') ||
-    getText('.salary-main-rail__data-body') || '';
+    getText('.salary-main-rail__data-body') ||
+    getText('[data-testid="job-details-salary"]') ||
+    (() => {
+      const m = document.body.innerText.match(/\$[\d,]+(?:\.\d{2})?(?:\/yr|\/hr)?\s*[-–]\s*\$[\d,]+(?:\.\d{2})?(?:\/yr|\/hr)?/);
+      return m ? m[0] : '';
+    })() || '';
 
   let jobType = 'REMOTE';
   const workplaceText = (
     getText('.job-details-jobs-unified-top-card__workplace-type') ||
     getText('.jobs-unified-top-card__workplace-type') ||
+    getAllText('.job-details-jobs-unified-top-card__primary-description') ||
     document.body.innerText.substring(0, 5000)
   ).toLowerCase();
 
-  if (workplaceText.includes('on-site') || workplaceText.includes('onsite')) {
+  if (workplaceText.includes('on-site') || workplaceText.includes('onsite') || workplaceText.includes('on site')) {
     jobType = 'ONSITE';
   } else if (workplaceText.includes('hybrid')) {
     jobType = 'HYBRID';
@@ -38,12 +55,37 @@ function extractLinkedIn() {
 
   const description = getText('.jobs-description__content') ||
     getText('.jobs-description-content__text') ||
-    getText('.description__text') || '';
+    getText('.description__text') ||
+    getText('.jobs-description-details') ||
+    getText('.jobs-search__job-details .jobs-description') || '';
 
-  const confidence = (title && company) ? 95 : (title ? 50 : 10);
+  // Fallback: parse document.title ("Company hiring Title in Location | LinkedIn")
+  let finalTitle = title;
+  let finalCompany = company;
+  let finalLocation = location;
+  const pageTitle = document.title || '';
+  if (!finalTitle || !finalCompany) {
+    const withLoc = pageTitle.match(/^(.+?)\s+hiring\s+(.+?)\s+in\s+(.+?)\s*\|/i);
+    const noLoc = pageTitle.match(/^(.+?)\s+hiring\s+(.+?)\s*\|/i);
+    if (withLoc) {
+      if (!finalCompany) finalCompany = withLoc[1].trim();
+      if (!finalTitle) finalTitle = withLoc[2].trim();
+      if (!finalLocation) finalLocation = withLoc[3].trim();
+    } else if (noLoc) {
+      if (!finalCompany) finalCompany = noLoc[1].trim();
+      if (!finalTitle) finalTitle = noLoc[2].trim();
+    } else if (!finalTitle && pageTitle) {
+      finalTitle = pageTitle.replace(/\s*\|\s*LinkedIn.*$/i, '').trim();
+    }
+  }
+
+  const confidence = (finalTitle && finalCompany) ? 95 : (finalTitle ? 50 : 10);
 
   return {
-    title, company, location, salary, jobType, description,
+    title: finalTitle || title,
+    company: finalCompany || company,
+    location: finalLocation || location,
+    salary, jobType, description,
     applyUrl: window.location.href,
     source: 'LinkedIn',
     confidence

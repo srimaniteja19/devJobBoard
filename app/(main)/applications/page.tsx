@@ -19,6 +19,7 @@ export default async function ApplicationsPage() {
     stack: a.stack,
     resumeLabel: a.resumeLabel,
     appliedAt: a.appliedAt?.toISOString() ?? null,
+    createdAt: a.createdAt.toISOString(),
     updatedAt: a.updatedAt.toISOString(),
   }));
 

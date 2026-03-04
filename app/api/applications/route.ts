@@ -54,7 +54,7 @@ export async function POST(req: NextRequest) {
       resumeFileUrl: data.resumeFileUrl || null,
       notes: data.notes || null,
       stack: JSON.stringify(stack),
-      appliedAt: appliedAt ? new Date(appliedAt) : null,
+      appliedAt: appliedAt ? new Date(appliedAt) : new Date(),
       userId: user.id,
     },
   });

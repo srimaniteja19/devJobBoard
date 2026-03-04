@@ -19,14 +19,16 @@ interface AppRow {
   stack: string;
   resumeLabel: string | null;
   appliedAt: string | null;
+  createdAt: string;
   updatedAt: string;
 }
 
-type SortKey = "company" | "role" | "status" | "appliedAt" | "updatedAt";
+type SortKey = "company" | "role" | "status" | "appliedAt" | "createdAt" | "updatedAt";
 
 export default function ApplicationsTable({ applications }: { applications: AppRow[] }) {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
+  const [dateFilter, setDateFilter] = useState("");
   const [sortKey, setSortKey] = useState<SortKey>("updatedAt");
   const [sortAsc, setSortAsc] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -48,12 +50,20 @@ export default function ApplicationsTable({ applications }: { applications: AppR
 
     if (statusFilter) result = result.filter((a) => a.status === statusFilter);
 
+    if (dateFilter) {
+      const days = parseInt(dateFilter, 10);
+      const cutoff = new Date();
+      cutoff.setDate(cutoff.getDate() - days);
+      cutoff.setHours(0, 0, 0, 0);
+      result = result.filter((a) => new Date(a.createdAt) >= cutoff);
+    }
+
     return [...result].sort((a, b) => {
       const av = a[sortKey] ?? "";
       const bv = b[sortKey] ?? "";
       return sortAsc ? av.localeCompare(bv) : bv.localeCompare(av);
     });
-  }, [applications, search, statusFilter, sortKey, sortAsc]);
+  }, [applications, search, statusFilter, dateFilter, sortKey, sortAsc]);
 
   const toggleSort = (key: SortKey) => {
     if (sortKey === key) setSortAsc(!sortAsc);
@@ -133,6 +143,16 @@ export default function ApplicationsTable({ applications }: { applications: AppR
             <option key={s} value={s}>{STATUS_LABELS[s]}</option>
           ))}
         </select>
+        <select
+          value={dateFilter}
+          onChange={(e) => setDateFilter(e.target.value)}
+          className="border border-edge bg-surface px-3 py-2 text-[13px] text-t-muted focus:border-accent focus:outline-none"
+        >
+          <option value="">All time</option>
+          <option value="7">Last 7 days</option>
+          <option value="30">Last 30 days</option>
+          <option value="90">Last 90 days</option>
+        </select>
       </div>
 
       {/* Mobile card list */}
@@ -162,11 +182,9 @@ export default function ApplicationsTable({ applications }: { applications: AppR
                 {parseStack(a.stack).slice(0, 2).map((t) => (
                   <span key={t} className={`px-1.5 py-0.5 text-[10px] font-medium ${getTagColor(t)}`}>{t}</span>
                 ))}
-                {a.appliedAt && (
-                  <span className="ml-auto text-[10px] font-light text-t-faint">
-                    {format(new Date(a.appliedAt), "MMM d")}
-                  </span>
-                )}
+                <span className="ml-auto text-[10px] font-light text-t-faint">
+                  {format(new Date(a.createdAt), "MMM d")}
+                </span>
               </div>
             </Link>
           ))
@@ -191,7 +209,7 @@ export default function ApplicationsTable({ applications }: { applications: AppR
               <th className="px-3 py-2.5 text-[11px] font-medium uppercase tracking-widest text-t-faint">Status</th>
               <th className="px-3 py-2.5 text-[11px] font-medium uppercase tracking-widest text-t-faint">Resume</th>
               <th className="px-3 py-2.5 text-[11px] font-medium uppercase tracking-widest text-t-faint">Stack</th>
-              <SortTh label="Applied" k="appliedAt" cur={sortKey} asc={sortAsc} onClick={toggleSort} />
+              <SortTh label="Added" k="createdAt" cur={sortKey} asc={sortAsc} onClick={toggleSort} />
             </tr>
           </thead>
           <tbody>
@@ -240,7 +258,7 @@ export default function ApplicationsTable({ applications }: { applications: AppR
                     </div>
                   </td>
                   <td className="px-3 py-3 font-light text-t-faint">
-                    {a.appliedAt ? format(new Date(a.appliedAt), "MMM d") : "—"}
+                    {format(new Date(a.createdAt), "MMM d, yyyy")}
                   </td>
                 </tr>
               ))

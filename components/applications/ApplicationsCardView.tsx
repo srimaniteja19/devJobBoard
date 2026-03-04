@@ -15,6 +15,7 @@ interface AppRow {
   stack: string;
   resumeLabel: string | null;
   appliedAt: string | null;
+  createdAt: string;
   updatedAt: string;
 }
 
@@ -50,9 +51,17 @@ function FilterSection({
   );
 }
 
+const DATE_FILTER_OPTIONS = [
+  { value: "", label: "All time" },
+  { value: "7", label: "Last 7 days" },
+  { value: "30", label: "Last 30 days" },
+  { value: "90", label: "Last 90 days" },
+] as const;
+
 export default function ApplicationsCardView({ applications }: { applications: AppRow[] }) {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
+  const [dateFilter, setDateFilter] = useState("");
 
   const filtered = useMemo(() => {
     let result = applications;
@@ -66,8 +75,15 @@ export default function ApplicationsCardView({ applications }: { applications: A
       );
     }
     if (statusFilter) result = result.filter((a) => a.status === statusFilter);
+    if (dateFilter) {
+      const days = parseInt(dateFilter, 10);
+      const cutoff = new Date();
+      cutoff.setDate(cutoff.getDate() - days);
+      cutoff.setHours(0, 0, 0, 0);
+      result = result.filter((a) => new Date(a.createdAt) >= cutoff);
+    }
     return result;
-  }, [applications, searchQuery, statusFilter]);
+  }, [applications, searchQuery, statusFilter, dateFilter]);
 
   const statusCounts = useMemo(() => {
     const counts: Record<string, number> = {};
@@ -80,9 +96,10 @@ export default function ApplicationsCardView({ applications }: { applications: A
   const handleClearFilters = () => {
     setSearchQuery("");
     setStatusFilter("");
+    setDateFilter("");
   };
 
-  const hasFilters = searchQuery || statusFilter;
+  const hasFilters = searchQuery || statusFilter || dateFilter;
 
   return (
     <div className="rounded-xl border border-[#d4dce6] bg-[#e8eef5] p-4 sm:p-6">
@@ -124,6 +141,22 @@ export default function ApplicationsCardView({ applications }: { applications: A
                   ))}
                 </div>
               </FilterSection>
+              <FilterSection title="Added date" defaultOpen={true}>
+                <div className="space-y-1">
+                  {DATE_FILTER_OPTIONS.map((opt) => (
+                    <button
+                      key={opt.value || "all"}
+                      type="button"
+                      onClick={() => setDateFilter(opt.value)}
+                      className={`block w-full rounded px-2 py-1.5 text-left text-[12px] ${
+                        dateFilter === opt.value ? "bg-[#d4e3f7] font-medium text-[#1e3a5f]" : "text-[#6b7c8f] hover:bg-[#eef2f7]"
+                      }`}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              </FilterSection>
             </div>
             {hasFilters && (
               <button
@@ -153,7 +186,7 @@ export default function ApplicationsCardView({ applications }: { applications: A
                   <h3 className="text-[15px] font-semibold text-[#1e3a5f]">{a.role}</h3>
                   <p className="mt-1 text-[13px] font-medium text-[#4a6b8a]">{a.company}</p>
                   <p className="mt-1 text-[12px] text-[#6b7c8f]">
-                    {a.appliedAt ? format(new Date(a.appliedAt), "M/d/yyyy") : "—"}
+                    Added {format(new Date(a.createdAt), "MMM d, yyyy")}
                     {a.location && (
                       <>
                         <span className="mx-1.5">·</span>

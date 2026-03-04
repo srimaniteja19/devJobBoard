@@ -14,6 +14,7 @@ interface AppRow {
   stack: string;
   resumeLabel: string | null;
   appliedAt: string | null;
+  createdAt: string;
   updatedAt: string;
 }
 
