@@ -85,6 +85,7 @@ model Application {
   appliedAt         DateTime?
   followUpDate      DateTime?
   notes             String?
+  source            String    @default("manual") // 'manual' | 'extension' | 'import'
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
 

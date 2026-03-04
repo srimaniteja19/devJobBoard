@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head><title>Icon Generator</title></head>
+<body>
+<h3>JobTracker Extension Icon Generator</h3>
+<p>Right-click each icon below and "Save image as..." to the extension/icons/ folder.</p>
+<div id="icons" style="display:flex;gap:20px;align-items:end;margin:20px 0;"></div>
+<script>
+const sizes = [16, 32, 48, 128];
+const container = document.getElementById('icons');
+
+sizes.forEach(size => {
+  const canvas = document.createElement('canvas');
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext('2d');
+
+  // Background
+  const r = size * 0.15;
+  ctx.beginPath();
+  ctx.roundRect(0, 0, size, size, r);
+  ctx.fillStyle = '#0a0a0a';
+  ctx.fill();
+  ctx.strokeStyle = '#1e1e1e';
+  ctx.lineWidth = Math.max(1, size * 0.02);
+  ctx.stroke();
+
+  // Text "JT"
+  const fontSize = Math.round(size * 0.42);
+  ctx.font = `600 ${fontSize}px "DM Mono", "SF Mono", "Menlo", monospace`;
+  ctx.fillStyle = '#e8ff47';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('JT', size / 2, size / 2 + size * 0.02);
+
+  const div = document.createElement('div');
+  div.style.textAlign = 'center';
+  const label = document.createElement('p');
+  label.textContent = `icon${size}.png`;
+  label.style.fontSize = '12px';
+  label.style.color = '#666';
+  div.appendChild(canvas);
+  div.appendChild(label);
+  container.appendChild(div);
+});
+</script>
+</body>
+</html>

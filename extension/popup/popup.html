@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=400">
+  <title>JobTracker</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+
+  <!-- ─── State: Loading ─── -->
+  <div id="state-loading" class="state active">
+    <div class="loading-container">
+      <div class="spinner"></div>
+      <p class="muted">Connecting…</p>
+    </div>
+  </div>
+
+  <!-- ─── State: Not Logged In ─── -->
+  <div id="state-auth" class="state">
+    <div class="auth-container">
+      <div class="logo">JT</div>
+      <h1>JobTracker</h1>
+      <p class="muted">Sign in to JobTracker to save jobs</p>
+      <button id="btn-open-tracker" class="btn-primary">Open JobTracker</button>
+      <div class="url-config">
+        <label class="muted">JobTracker URL</label>
+        <div class="url-row">
+          <input type="url" id="input-api-url" placeholder="http://localhost:3000">
+          <button id="btn-save-url" class="btn-small">Save</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── State: No Job Detected ─── -->
+  <div id="state-empty" class="state">
+    <header class="popup-header">
+      <span class="header-title">JobTracker</span>
+      <div class="header-right">
+        <button id="btn-settings-empty" class="btn-icon" title="Settings">⚙</button>
+      </div>
+    </header>
+    <div class="empty-container">
+      <div class="empty-icon">🔍</div>
+      <p class="empty-title">No job posting detected</p>
+      <p class="muted small">Visit a job listing on LinkedIn, Indeed, Greenhouse, Lever, or any career page</p>
+      <button id="btn-manual-add" class="btn-secondary">Add Manually</button>
+      <a id="link-open-tracker-empty" href="#" class="link-muted">Open JobTracker</a>
+    </div>
+  </div>
+
+  <!-- ─── State: Job Detected / Manual Form ─── -->
+  <div id="state-form" class="state">
+    <header class="popup-header">
+      <span class="header-title">JobTracker</span>
+      <div class="header-right">
+        <span id="user-badge" class="user-badge"></span>
+        <button id="btn-settings-form" class="btn-icon" title="Settings">⚙</button>
+      </div>
+    </header>
+
+    <div id="confidence-banner" class="confidence-banner hidden">
+      <span>⚠ Some fields may need review</span>
+    </div>
+
+    <div id="duplicate-banner" class="duplicate-banner hidden">
+      <span>⚠ Looks like you've already tracked this job</span>
+      <div class="duplicate-actions">
+        <a id="link-view-existing" href="#" class="link-accent">View existing</a>
+        <span class="muted">|</span>
+        <button id="btn-save-anyway" class="btn-text">Save anyway</button>
+      </div>
+    </div>
+
+    <div class="form-card">
+      <div class="card-top-row">
+        <span id="source-badge" class="source-badge">Web</span>
+      </div>
+
+      <div class="field">
+        <input type="text" id="field-title" placeholder="Job Title" class="input-title" autocomplete="off">
+      </div>
+      <div class="field">
+        <input type="text" id="field-company" placeholder="Company" class="input-company" autocomplete="off">
+      </div>
+      <div class="field">
+        <input type="text" id="field-location" placeholder="Location" class="input-secondary" autocomplete="off">
+      </div>
+      <div class="field">
+        <input type="text" id="field-salary" placeholder="Salary range (optional)" class="input-secondary" autocomplete="off">
+      </div>
+      <div class="field">
+        <input type="url" id="field-url" placeholder="Job URL" class="input-secondary" autocomplete="off">
+      </div>
+
+      <div class="field">
+        <div class="pill-group" id="job-type-pills">
+          <button class="pill" data-value="REMOTE">Remote</button>
+          <button class="pill" data-value="HYBRID">Hybrid</button>
+          <button class="pill" data-value="ONSITE">Onsite</button>
+        </div>
+      </div>
+
+      <div class="jd-preview">
+        <button id="toggle-jd" class="btn-text small">View extracted JD ▾</button>
+        <div id="jd-content" class="jd-content hidden">
+          <p id="jd-text" class="jd-text"></p>
+          <p class="muted tiny">Full JD will be saved</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="status-section">
+      <label class="label-upper">Save as</label>
+      <div class="pill-group status-pills" id="status-pills">
+        <button class="pill pill-status" data-value="WISHLIST" data-color="#dee2ff">Wishlist</button>
+        <button class="pill pill-status" data-value="APPLIED" data-color="#e8ff47">Applied</button>
+        <button class="pill pill-status" data-value="SCREENING" data-color="#cbc0d3">Screening</button>
+        <button class="pill pill-status" data-value="INTERVIEW" data-color="#fb923c">Interview</button>
+      </div>
+    </div>
+
+    <div class="notes-section">
+      <button id="toggle-notes" class="btn-text small">Add notes +</button>
+      <textarea id="field-notes" class="notes-input hidden" placeholder="Quick notes about this application…" rows="3"></textarea>
+    </div>
+
+    <button id="btn-save" class="btn-save">Save to JobTracker</button>
+    <a id="link-open-tracker-form" href="#" class="link-muted center">Open JobTracker</a>
+  </div>
+
+  <!-- ─── State: Success ─── -->
+  <div id="state-success" class="state">
+    <div class="success-container">
+      <svg class="checkmark" viewBox="0 0 52 52">
+        <circle class="checkmark-circle" cx="26" cy="26" r="25" fill="none"/>
+        <path class="checkmark-check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8"/>
+      </svg>
+      <h2 class="success-title">Saved!</h2>
+      <p id="success-detail" class="muted"></p>
+      <div id="success-status-badge" class="status-badge-inline"></div>
+      <div class="success-actions">
+        <button id="btn-view-in-tracker" class="btn-secondary">View in JobTracker →</button>
+        <button id="btn-open-prep" class="btn-text">Open Prep Coach</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── State: Settings ─── -->
+  <div id="state-settings" class="state">
+    <header class="popup-header">
+      <button id="btn-back-settings" class="btn-icon">←</button>
+      <span class="header-title">Settings</span>
+      <div class="header-right"></div>
+    </header>
+    <div class="settings-container">
+      <div class="setting-row">
+        <label class="setting-label">JobTracker URL</label>
+        <input type="url" id="settings-url" placeholder="http://localhost:3000" class="input-secondary full">
+      </div>
+      <div class="setting-row">
+        <label class="setting-label">Default status</label>
+        <select id="settings-default-status" class="select-input">
+          <option value="WISHLIST">Wishlist</option>
+          <option value="APPLIED" selected>Applied</option>
+          <option value="SCREENING">Screening</option>
+          <option value="INTERVIEW">Interview</option>
+        </select>
+      </div>
+      <div class="setting-row toggle-row">
+        <label class="setting-label">Auto-detect jobs on page load</label>
+        <input type="checkbox" id="settings-auto-extract" checked>
+      </div>
+      <div class="setting-row toggle-row">
+        <label class="setting-label">Show save notifications</label>
+        <input type="checkbox" id="settings-notifications" checked>
+      </div>
+      <div class="setting-row">
+        <button id="btn-clear-data" class="btn-danger-text">Clear saved data</button>
+      </div>
+      <p class="muted tiny center">JobTracker Extension v1.0.0</p>
+    </div>
+  </div>
+
+  <script src="../lib/storage.js"></script>
+  <script src="../lib/parser.js"></script>
+  <script src="../lib/api.js"></script>
+  <script src="popup.js"></script>
+</body>
+</html>
