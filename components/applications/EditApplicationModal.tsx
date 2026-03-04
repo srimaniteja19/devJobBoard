@@ -97,7 +97,7 @@ export default function EditApplicationModal({
     if (open && initialData) {
       const stackArr = parseStack(initialData.stack);
       const validStatuses: AppStatus[] = ["WISHLIST", "APPLIED", "SCREENING", "INTERVIEW", "OFFER", "REJECTED", "GHOSTED"];
-      const status = validStatuses.includes(initialData.status as AppStatus) ? initialData.status : "APPLIED";
+      const status: AppStatus = validStatuses.includes(initialData.status as AppStatus) ? (initialData.status as AppStatus) : "APPLIED";
       reset({
         company: initialData.company,
         role: initialData.role,
