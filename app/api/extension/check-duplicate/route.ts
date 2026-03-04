@@ -24,10 +24,7 @@ export async function GET(req: NextRequest) {
   const role = url.searchParams.get("role") || "";
 
   if (!company || !role) {
-    return NextResponse.json(
-      { exists: false },
-      { headers: corsHeaders() }
-    );
+    return NextResponse.json({ exists: false }, { headers });
   }
 
   const existing = await prisma.application.findFirst({
