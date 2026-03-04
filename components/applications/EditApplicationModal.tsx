@@ -6,7 +6,7 @@ import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { X, Loader2, Pencil } from "lucide-react";
 import { applicationSchema, type ApplicationFormData } from "@/lib/validations/application";
-import { LOCATION_LABELS, STATUS_LABELS, KANBAN_COLUMNS, type LocationType } from "@/types";
+import { LOCATION_LABELS, STATUS_LABELS, KANBAN_COLUMNS, type LocationType, type AppStatus } from "@/types";
 import StackTagInput from "@/components/ui/StackTagInput";
 import { parseStack } from "@/lib/utils";
 
@@ -96,6 +96,8 @@ export default function EditApplicationModal({
   useEffect(() => {
     if (open && initialData) {
       const stackArr = parseStack(initialData.stack);
+      const validStatuses: AppStatus[] = ["WISHLIST", "APPLIED", "SCREENING", "INTERVIEW", "OFFER", "REJECTED", "GHOSTED"];
+      const status = validStatuses.includes(initialData.status as AppStatus) ? initialData.status : "APPLIED";
       reset({
         company: initialData.company,
         role: initialData.role,
@@ -104,7 +106,7 @@ export default function EditApplicationModal({
         location: initialData.location ?? "",
         type: (initialData.type as LocationType) || "REMOTE",
         stack: stackArr,
-        status: initialData.status || "APPLIED",
+        status,
         resumeLabel: initialData.resumeLabel ?? "",
         appliedAt: initialData.appliedAt
           ? new Date(initialData.appliedAt).toISOString().slice(0, 10)

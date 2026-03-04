@@ -44,15 +44,20 @@ export async function POST() {
 
     if (apps.length === 0) {
       return NextResponse.json(
-        { error: "No applications yet. Add some applications to run a blind spot analysis." },
-        { status: 400 }
+        {
+          error:
+            "No applications yet. Add some applications to run a blind spot analysis.",
+        },
+        { status: 400 },
       );
     }
 
     // Build a compact summary for Gemini (avoid token bloat)
     const summary = apps.map((a) => {
       const appliedDate = a.appliedAt ?? a.createdAt;
-      const dayOfWeek = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][appliedDate.getDay()];
+      const dayOfWeek = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][
+        appliedDate.getDay()
+      ];
       const stack = parseStack(a.stack);
       return {
         company: a.company,
@@ -95,12 +100,16 @@ ${JSON.stringify(summary)}
 
 Identify patterns, mismatches, underselling, timing issues, or targeting blind spots.`;
 
-    const result = (await generateJson(systemInstruction, userInput)) as BlindSpotResult;
+    const result = (await generateJson(
+      systemInstruction,
+      userInput,
+    )) as BlindSpotResult;
 
     if (!Array.isArray(result?.insights) || result.insights.length === 0) {
       return NextResponse.json({
         insights: [],
-        message: "No clear patterns detected. Add more applications and try again.",
+        message:
+          "No clear patterns detected. Add more applications and try again.",
       });
     }
 
@@ -112,8 +121,11 @@ Identify patterns, mismatches, underselling, timing issues, or targeting blind s
 
     if (msg.includes("not configured")) {
       return NextResponse.json(
-        { error: "GOOGLE_GENERATIVE_AI_API_KEY or GEMINI_API_KEY not configured" },
-        { status: 500 }
+        {
+          error:
+            "GOOGLE_GENERATIVE_AI_API_KEY or GEMINI_API_KEY not configured",
+        },
+        { status: 500 },
       );
     }
 
@@ -122,7 +134,7 @@ Identify patterns, mismatches, underselling, timing issues, or targeting blind s
         error: "Something went wrong while analyzing. Please try again.",
         details: process.env.NODE_ENV === "development" ? detail : undefined,
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

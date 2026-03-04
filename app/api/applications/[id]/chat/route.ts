@@ -3,7 +3,8 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 import { prisma } from "@/lib/db";
 import { authenticatedAction } from "@/lib/api-auth";
 
-const API_KEY = process.env.GOOGLE_GENERATIVE_AI_API_KEY ?? process.env.GEMINI_API_KEY;
+const API_KEY =
+  process.env.GOOGLE_GENERATIVE_AI_API_KEY ?? process.env.GEMINI_API_KEY;
 const MAX_MESSAGES_RETURN = 50;
 const MAX_MESSAGES_CONTEXT = 30;
 
@@ -21,22 +22,27 @@ function isMockInterviewRequest(message: string): boolean {
   return (
     lower.includes("mock interview") ||
     lower.includes("start a mock") ||
-    (lower.includes("interview") && (lower.includes("start") || lower.includes("begin")))
+    (lower.includes("interview") &&
+      (lower.includes("start") || lower.includes("begin")))
   );
 }
 
-function buildSystemPrompt(app: {
-  role: string;
-  company: string;
-  location: string | null;
-  type: string;
-  salary: string | null;
-  status: string;
-  stack: string;
-  notes: string | null;
-  resumeText: string | null;
-  resumeFileName: string | null;
-}, conversationSummary?: string, isMockInterview?: boolean): string {
+function buildSystemPrompt(
+  app: {
+    role: string;
+    company: string;
+    location: string | null;
+    type: string;
+    salary: string | null;
+    status: string;
+    stack: string;
+    notes: string | null;
+    resumeText: string | null;
+    resumeFileName: string | null;
+  },
+  conversationSummary?: string,
+  isMockInterview?: boolean,
+): string {
   const stack = parseStack(app.stack);
   const currentDate = new Date().toLocaleDateString();
   let prompt = `You are an expert job search coach and career advisor with deep knowledge of recruiting, interviews, salary negotiation, and resume writing.
@@ -94,7 +100,7 @@ You are now conducting a mock interview for ${app.role} at ${app.company}.
 
 export async function GET(
   _req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: { id: string } },
 ) {
   const { user, unauthorized } = await authenticatedAction();
   if (unauthorized) return unauthorized;
@@ -117,12 +123,14 @@ export async function GET(
 
 export async function POST(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: { id: string } },
 ) {
   if (!API_KEY) {
     return NextResponse.json(
-      { error: "GOOGLE_GENERATIVE_AI_API_KEY or GEMINI_API_KEY not configured" },
-      { status: 500 }
+      {
+        error: "GOOGLE_GENERATIVE_AI_API_KEY or GEMINI_API_KEY not configured",
+      },
+      { status: 500 },
     );
   }
 
@@ -146,9 +154,18 @@ export async function POST(
     return NextResponse.json({ error: "message is required" }, { status: 400 });
   }
 
-  const attachmentText = typeof body.attachmentText === "string" ? body.attachmentText.trim() : undefined;
-  const attachmentName = typeof body.attachmentName === "string" ? body.attachmentName.trim() : undefined;
-  const regenerateMessageId = typeof body.regenerateMessageId === "string" ? body.regenerateMessageId : undefined;
+  const attachmentText =
+    typeof body.attachmentText === "string"
+      ? body.attachmentText.trim()
+      : undefined;
+  const attachmentName =
+    typeof body.attachmentName === "string"
+      ? body.attachmentName.trim()
+      : undefined;
+  const regenerateMessageId =
+    typeof body.regenerateMessageId === "string"
+      ? body.regenerateMessageId
+      : undefined;
 
   const app = await prisma.application.findFirst({
     where: { id: params.id, userId: user.id },
@@ -186,7 +203,10 @@ export async function POST(
     const recent = allMessages.slice(-MAX_MESSAGES_CONTEXT);
     const older = allMessages.slice(0, -MAX_MESSAGES_CONTEXT);
     conversationSummary = older
-      .map((m) => `${m.role}: ${m.content.slice(0, 200)}${m.content.length > 200 ? "..." : ""}`)
+      .map(
+        (m) =>
+          `${m.role}: ${m.content.slice(0, 200)}${m.content.length > 200 ? "..." : ""}`,
+      )
       .join("\n");
     historyMessages = recent;
   }
@@ -196,12 +216,17 @@ export async function POST(
     parts: [{ text: msg.content }],
   }));
 
-  const userContent = attachmentText && attachmentName
-    ? `[Attached file: ${attachmentName}]\n\n${attachmentText}\n\n${message}`
-    : message;
+  const userContent =
+    attachmentText && attachmentName
+      ? `[Attached file: ${attachmentName}]\n\n${attachmentText}\n\n${message}`
+      : message;
 
   const isMockInterview = isMockInterviewRequest(userContent);
-  const systemInstruction = buildSystemPrompt(app, conversationSummary, isMockInterview);
+  const systemInstruction = buildSystemPrompt(
+    app,
+    conversationSummary,
+    isMockInterview,
+  );
 
   try {
     const genAI = new GoogleGenerativeAI(API_KEY);
@@ -253,20 +278,22 @@ export async function POST(
       },
     });
 
-    return NextResponse.json({ response: responseText || "(No response generated.)" });
+    return NextResponse.json({
+      response: responseText || "(No response generated.)",
+    });
   } catch (e) {
     const msg = e instanceof Error ? e.message : "Internal error";
     console.error("Chat POST error:", msg, e instanceof Error ? e.stack : "");
     return NextResponse.json(
       { error: "Something went wrong. Please try again." },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
 
 export async function DELETE(
   _req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: { id: string } },
 ) {
   const { user, unauthorized } = await authenticatedAction();
   if (unauthorized) return unauthorized;
@@ -287,7 +314,7 @@ export async function DELETE(
 
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: { id: string } },
 ) {
   const { user, unauthorized } = await authenticatedAction();
   if (unauthorized) return unauthorized;
@@ -307,9 +334,15 @@ export async function PATCH(
   }
 
   const messageId = typeof body.messageId === "string" ? body.messageId : "";
-  const feedback = body.feedback === "positive" || body.feedback === "negative" ? body.feedback : null;
+  const feedback =
+    body.feedback === "positive" || body.feedback === "negative"
+      ? body.feedback
+      : null;
   if (!messageId || feedback === null) {
-    return NextResponse.json({ error: "messageId and feedback (positive|negative) required" }, { status: 400 });
+    return NextResponse.json(
+      { error: "messageId and feedback (positive|negative) required" },
+      { status: 400 },
+    );
   }
 
   await prisma.chatMessage.updateMany({

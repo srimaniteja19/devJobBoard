@@ -17,7 +17,7 @@ function parseStack(stack: string): string[] {
 
 export async function POST(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: { id: string } },
 ) {
   const { user, unauthorized } = await authenticatedAction();
   if (unauthorized) return unauthorized;
@@ -26,17 +26,19 @@ export async function POST(
   try {
     body = await req.json();
   } catch {
-    return NextResponse.json(
-      { error: "Invalid JSON body" },
-      { status: 400 }
-    );
+    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }
 
   const { stage, section } = body;
-  if (!stage || !section || typeof stage !== "string" || typeof section !== "string") {
+  if (
+    !stage ||
+    !section ||
+    typeof stage !== "string" ||
+    typeof section !== "string"
+  ) {
     return NextResponse.json(
       { error: "stage and section required" },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
@@ -68,11 +70,12 @@ export async function POST(
     const { systemInstruction, userInput } = getPrepPrompt(
       stage as AppStatus,
       section,
-      ctx
+      ctx,
     );
 
     const content = await generateJson(systemInstruction, userInput);
-    const contentStr = typeof content === "string" ? content : JSON.stringify(content);
+    const contentStr =
+      typeof content === "string" ? content : JSON.stringify(content);
 
     await prisma.applicationPrep.upsert({
       where: {
@@ -103,8 +106,11 @@ export async function POST(
 
     if (msg.includes("not configured")) {
       return NextResponse.json(
-        { error: "GOOGLE_GENERATIVE_AI_API_KEY or GEMINI_API_KEY not configured" },
-        { status: 500 }
+        {
+          error:
+            "GOOGLE_GENERATIVE_AI_API_KEY or GEMINI_API_KEY not configured",
+        },
+        { status: 500 },
       );
     }
 
@@ -113,7 +119,7 @@ export async function POST(
         error: "Something went wrong while generating prep. Please try again.",
         details: process.env.NODE_ENV === "development" ? detail : undefined,
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

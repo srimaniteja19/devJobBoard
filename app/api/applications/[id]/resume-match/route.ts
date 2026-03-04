@@ -14,7 +14,7 @@ function parseStack(stack: string): string[] {
 
 export async function GET(
   _req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: { id: string } },
 ) {
   const { user, unauthorized } = await authenticatedAction();
   if (unauthorized) return unauthorized;
@@ -42,7 +42,7 @@ export async function GET(
 
 export async function POST(
   _req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: { id: string } },
 ) {
   const { user, unauthorized } = await authenticatedAction();
   if (unauthorized) return unauthorized;
@@ -69,14 +69,14 @@ export async function POST(
     if (!resumeText) {
       return NextResponse.json(
         { error: "No resume text. Upload a resume (PDF, DOCX, TXT) first." },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     if (!notes) {
       return NextResponse.json(
         { error: "Add job description or notes to compare against." },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -130,7 +130,8 @@ Perform a complete resume-JD match analysis and return this exact JSON structure
 }`;
 
     const content = await generateJson(systemInstruction, userInput);
-    const result = typeof content === "object" ? content : JSON.parse(String(content));
+    const result =
+      typeof content === "object" ? content : JSON.parse(String(content));
     const resultStr = JSON.stringify(result);
 
     const overallScore = Number(result?.overallScore ?? 0);
@@ -160,13 +161,16 @@ Perform a complete resume-JD match analysis and return this exact JSON structure
     if (msg.includes("not configured")) {
       return NextResponse.json(
         { error: "GOOGLE_GENERATIVE_AI_API_KEY not configured" },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
     return NextResponse.json(
-      { error: "Analysis failed. Please try again.", details: process.env.NODE_ENV === "development" ? detail : undefined },
-      { status: 500 }
+      {
+        error: "Analysis failed. Please try again.",
+        details: process.env.NODE_ENV === "development" ? detail : undefined,
+      },
+      { status: 500 },
     );
   }
 }

@@ -1,10 +1,13 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
-const API_KEY = process.env.GOOGLE_GENERATIVE_AI_API_KEY ?? process.env.GEMINI_API_KEY;
+const API_KEY =
+  process.env.GOOGLE_GENERATIVE_AI_API_KEY ?? process.env.GEMINI_API_KEY;
 
 export function getGeminiClient() {
   if (!API_KEY) {
-    throw new Error("GOOGLE_GENERATIVE_AI_API_KEY or GEMINI_API_KEY not configured");
+    throw new Error(
+      "GOOGLE_GENERATIVE_AI_API_KEY or GEMINI_API_KEY not configured",
+    );
   }
   return new GoogleGenerativeAI(API_KEY);
 }
@@ -22,7 +25,7 @@ function parseJsonFromText(text: string): unknown {
 
 export async function generateJson(
   systemInstruction: string,
-  userInput: string
+  userInput: string,
 ): Promise<unknown> {
   const genAI = getGeminiClient();
   const model = genAI.getGenerativeModel({

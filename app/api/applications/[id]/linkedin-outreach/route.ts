@@ -3,7 +3,8 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 import { prisma } from "@/lib/db";
 import { authenticatedAction } from "@/lib/api-auth";
 
-const API_KEY = process.env.GOOGLE_GENERATIVE_AI_API_KEY ?? process.env.GEMINI_API_KEY;
+const API_KEY =
+  process.env.GOOGLE_GENERATIVE_AI_API_KEY ?? process.env.GEMINI_API_KEY;
 
 function parseStack(stack: string): string[] {
   try {
@@ -29,12 +30,14 @@ export interface LinkedInOutreachResult {
 
 export async function POST(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: { id: string } },
 ) {
   if (!API_KEY) {
     return NextResponse.json(
-      { error: "GOOGLE_GENERATIVE_AI_API_KEY or GEMINI_API_KEY not configured" },
-      { status: 500 }
+      {
+        error: "GOOGLE_GENERATIVE_AI_API_KEY or GEMINI_API_KEY not configured",
+      },
+      { status: 500 },
     );
   }
 
@@ -48,8 +51,10 @@ export async function POST(
     body = {};
   }
 
-  const contactName = typeof body.contactName === "string" ? body.contactName.trim() : "";
-  const contactRole = typeof body.contactRole === "string" ? body.contactRole.trim() : "";
+  const contactName =
+    typeof body.contactName === "string" ? body.contactName.trim() : "";
+  const contactRole =
+    typeof body.contactRole === "string" ? body.contactRole.trim() : "";
   const hasContact = contactName.length > 0 || contactRole.length > 0;
 
   try {
@@ -69,7 +74,9 @@ export async function POST(
     // Note: responseMimeType: "application/json" is incompatible with tools, so we instruct JSON output and parse it.
     const model = genAI.getGenerativeModel({
       model: "gemini-2.5-flash-lite",
-      tools: [{ google_search: {} }] as unknown as { googleSearchRetrieval?: object }[],
+      tools: [{ google_search: {} }] as unknown as {
+        googleSearchRetrieval?: object;
+      }[],
       systemInstruction: `You are a professional LinkedIn outreach coach. Your job is to write highly personalized, non-cringe LinkedIn messages.
 
 CRITICAL: You MUST respond with ONLY valid JSON. No markdown, no code fences, no explanation. Raw JSON only.
@@ -123,7 +130,7 @@ Include 2-4 suggestions. Prefer recruiters, hiring managers, or engineers on the
     if (!text) {
       return NextResponse.json(
         { error: "Empty response from AI. Please try again." },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
@@ -131,20 +138,29 @@ Include 2-4 suggestions. Prefer recruiters, hiring managers, or engineers on the
 
     // Validate structure
     if (hasContact) {
-      if (!parsed?.connectionRequest || typeof parsed.connectionRequest !== "string") {
+      if (
+        !parsed?.connectionRequest ||
+        typeof parsed.connectionRequest !== "string"
+      ) {
         return NextResponse.json(
           { error: "Could not generate connection request. Please try again." },
-          { status: 500 }
+          { status: 500 },
         );
       }
-      if (!parsed?.followUpMessage || typeof parsed.followUpMessage !== "string") {
+      if (
+        !parsed?.followUpMessage ||
+        typeof parsed.followUpMessage !== "string"
+      ) {
         parsed.followUpMessage = "";
       }
     } else {
-      if (!Array.isArray(parsed?.suggestedContacts) || parsed.suggestedContacts.length === 0) {
+      if (
+        !Array.isArray(parsed?.suggestedContacts) ||
+        parsed.suggestedContacts.length === 0
+      ) {
         return NextResponse.json(
           { error: "Could not suggest contacts. Please try again." },
-          { status: 500 }
+          { status: 500 },
         );
       }
     }
@@ -156,10 +172,11 @@ Include 2-4 suggestions. Prefer recruiters, hiring managers, or engineers on the
     console.error("LinkedIn outreach error:", msg, detail);
     return NextResponse.json(
       {
-        error: "Something went wrong while generating outreach. Please try again.",
+        error:
+          "Something went wrong while generating outreach. Please try again.",
         details: process.env.NODE_ENV === "development" ? detail : undefined,
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
