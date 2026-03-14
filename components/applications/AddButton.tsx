@@ -27,7 +27,7 @@ export default function AddButton({ className, variant = "primary" }: AddButtonP
 
   const styles = {
     nav: "inline-flex items-center gap-1.5 px-2.5 py-1.5 text-[13px] font-light text-t-muted transition-theme hover:text-t-primary",
-    primary: "press inline-flex items-center gap-1.5 bg-accent px-4 py-2 text-[13px] font-medium text-bg transition-theme hover:bg-accent-hover",
+    primary: "press inline-flex items-center gap-1.5 bg-accent px-4 py-2 text-[13px] font-medium text-on-accent transition-theme hover:bg-accent-hover",
     mobile: "flex flex-col items-center gap-0.5 text-[10px] font-light text-t-muted transition-theme",
   };
 

@@ -180,7 +180,7 @@ export default function ResumeMatcher({
 
   if (!hasResume) {
     return (
-      <section className="mt-6 border border-dashed border-[#1e1e1e] bg-surface p-4 sm:p-6">
+      <section className="mt-6 border border-dashed border-edge bg-surface p-4 sm:p-6">
         <h2 className="mb-2 text-[11px] font-medium uppercase tracking-widest text-t-muted">
           Match My Resume
         </h2>
@@ -198,7 +198,7 @@ export default function ResumeMatcher({
           type="button"
           onClick={() => inputRef.current?.click()}
           disabled={uploading}
-          className="flex items-center gap-2 border border-dashed border-[#1e1e1e] bg-bg px-4 py-3 text-[13px] font-light text-t-muted transition-colors hover:border-[#e8ff47] hover:text-t-primary disabled:opacity-50"
+          className="flex items-center gap-2 border border-dashed border-edge bg-bg px-4 py-3 text-[13px] font-light text-t-muted transition-colors hover:border-accent hover:text-t-primary disabled:opacity-50"
         >
           {uploading ? (
             <Loader2 className="h-4 w-4 animate-spin" />
@@ -306,7 +306,7 @@ export default function ResumeMatcher({
               <span className="w-24 text-[11px] font-light text-[#555]">
                 {label}
               </span>
-              <div className="h-1.5 flex-1 overflow-hidden rounded bg-[#1e1e1e]">
+              <div className="h-1.5 flex-1 overflow-hidden rounded bg-edge">
                 <div
                   className="h-full rounded transition-all"
                   style={{
@@ -335,7 +335,7 @@ export default function ResumeMatcher({
 
       {/* Hiring manager view */}
       {result.hiringManagerPerspective && (
-        <div className="mb-6 border-l-2 border-[#e8ff47] bg-[#0d0d0d] p-4">
+        <div className="mb-6 border-l-2 border-accent bg-bg p-4">
           <p className="mb-1 text-[11px] font-medium uppercase tracking-widest text-[#333]">
             Hiring manager&apos;s first impression
           </p>

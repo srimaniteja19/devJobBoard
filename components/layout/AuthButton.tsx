@@ -14,7 +14,7 @@ export default function AuthButton() {
     return (
       <button
         onClick={() => signIn()}
-        className="press inline-flex items-center gap-1.5 bg-accent px-3 py-1.5 text-[12px] font-medium text-bg transition-theme hover:bg-accent-hover"
+        className="press inline-flex items-center gap-1.5 bg-accent px-3 py-1.5 text-[12px] font-medium text-on-accent transition-theme hover:bg-accent-hover"
       >
         <LogIn className="h-3 w-3" />
         <span className="hidden sm:inline">Sign in</span>
@@ -29,11 +29,11 @@ export default function AuthButton() {
         <img
           src={session.user.image}
           alt={session.user.name ?? "Avatar"}
-          className="h-6 w-6 rounded-full border border-[#2a2a2a] sm:h-7 sm:w-7"
+          className="h-6 w-6 rounded-full border border-edge sm:h-7 sm:w-7"
           referrerPolicy="no-referrer"
         />
       ) : (
-        <div className="flex h-6 w-6 items-center justify-center rounded-full border border-[#2a2a2a] bg-edge text-[10px] font-medium text-t-muted sm:h-7 sm:w-7 sm:text-[11px]">
+        <div className="flex h-6 w-6 items-center justify-center rounded-full border border-edge bg-edge text-[10px] font-medium text-t-muted sm:h-7 sm:w-7 sm:text-[11px]">
           {session.user.name?.charAt(0)?.toUpperCase() ?? "?"}
         </div>
       )}

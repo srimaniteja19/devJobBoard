@@ -206,7 +206,7 @@ export default function ResumeBuilder({
             type="button"
             onClick={handleGenerate}
             disabled={loading}
-            className="flex w-full items-center justify-center gap-2 bg-[#e8ff47] py-3 text-[13px] font-medium text-[#0a0a0a] transition-colors hover:opacity-90 disabled:opacity-50"
+            className="flex w-full items-center justify-center gap-2 bg-accent py-3 text-[13px] font-medium text-on-accent transition-colors hover:opacity-90 disabled:opacity-50"
           >
             {loading ? (
               <>

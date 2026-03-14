@@ -435,7 +435,7 @@ export default function JobChat({
                 type="button"
                 onClick={savePasteJd}
                 disabled={savingJd}
-                className="rounded bg-accent px-3 py-1.5 text-[12px] font-medium text-bg disabled:opacity-50"
+                className="rounded bg-accent px-3 py-1.5 text-[12px] font-medium text-on-accent disabled:opacity-50"
               >
                 {savingJd ? "Saving…" : "Save"}
               </button>
@@ -597,7 +597,7 @@ export default function JobChat({
         <button
           type="button"
           onClick={() => setMobileOpen(true)}
-          className="flex h-[52px] w-[52px] items-center justify-center rounded-full bg-accent text-bg shadow-lg transition-transform hover:scale-105"
+          className="flex h-[52px] w-[52px] items-center justify-center rounded-full bg-accent text-on-accent shadow-lg transition-transform hover:scale-105"
           title="Open chat"
         >
           <MessageCircle className="h-6 w-6" />

@@ -76,7 +76,7 @@ export default function SectionAccordion({
     return (
       <div className="flex items-center gap-2">
         <span className="w-24 text-[11px] font-light text-[#555]">{label}</span>
-        <div className="h-1.5 flex-1 overflow-hidden rounded bg-[#1e1e1e]">
+        <div className="h-1.5 flex-1 overflow-hidden rounded bg-edge">
           <div
             className="h-full rounded transition-all duration-500"
             style={{ width: `${score}%`, backgroundColor: color }}
@@ -102,7 +102,7 @@ export default function SectionAccordion({
   }) => {
     const isExpanded = expanded[keyName] ?? false;
     return (
-      <div className="overflow-hidden rounded-md border border-[#1e1e1e] bg-[#111]">
+      <div className="overflow-hidden rounded-md border border-edge bg-surface">
         <button
           type="button"
           onClick={() => toggle(keyName)}

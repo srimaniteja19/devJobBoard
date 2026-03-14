@@ -286,7 +286,7 @@ export default function ApplicationsTable({ applications }: { applications: AppR
             <button
               onClick={bulkMove}
               disabled={!bulkStatus || bulkLoading}
-              className="bg-accent px-3 py-1 text-[12px] font-medium text-bg transition-theme hover:bg-accent-hover disabled:opacity-40"
+              className="bg-accent px-3 py-1 text-[12px] font-medium text-on-accent transition-theme hover:bg-accent-hover disabled:opacity-40"
             >
               Apply
             </button>
@@ -297,7 +297,7 @@ export default function ApplicationsTable({ applications }: { applications: AppR
                 <button
                   onClick={bulkDelete}
                   disabled={bulkLoading}
-                  className="bg-[#f87171] px-2 py-1 text-[11px] font-medium text-bg"
+                  className="bg-[#f87171] px-2 py-1 text-[11px] font-medium text-white"
                 >
                   Yes
                 </button>

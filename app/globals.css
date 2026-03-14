@@ -5,6 +5,78 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Light theme (default) */
+:root {
+  --color-bg: #f5f5f5;
+  --color-surface: #ffffff;
+  --color-edge: #e5e5e5;
+  --color-edge-hover: #d4d4d4;
+  --color-accent: #4d7c0f;
+  --color-accent-hover: #65a30d;
+  --color-on-accent: #ffffff;
+  --color-t-primary: #171717;
+  --color-t-muted: #525252;
+  --color-t-faint: #a3a3a3;
+  --color-purple-dark: #ede9fe;
+  --color-purple: #ddd6fe;
+  --color-purple-mid: #c4b5fd;
+  --color-purple-soft: #a78bfa;
+  --color-purple-glow: #7c3aed;
+  --color-pink-dark: #fce7f3;
+  --color-pink: #fbcfe8;
+  --color-pink-mid: #f9a8d4;
+  --color-pink-hot: #ec4899;
+  --color-pink-soft: #f472b6;
+  --scrollbar-track: #e5e5e5;
+  --scrollbar-thumb: #a3a3a3;
+  --scrollbar-thumb-hover: #737373;
+  /* Calendar status pills - light theme */
+  --status-wishlist-bg: rgba(100, 100, 100, 0.12);
+  --status-applied-bg: rgba(139, 92, 246, 0.18);
+  --status-screening-bg: rgba(251, 191, 36, 0.25);
+  --status-interview-bg: rgba(251, 146, 60, 0.25);
+  --status-offer-bg: rgba(77, 124, 15, 0.2);
+  --status-rejected-bg: rgba(248, 113, 113, 0.2);
+  --status-ghosted-bg: rgba(100, 100, 100, 0.1);
+  --status-offer-text: #166534;
+}
+
+/* Dark theme */
+[data-theme="dark"] {
+  --color-bg: #0a0a0a;
+  --color-surface: #111111;
+  --color-edge: #1e1e1e;
+  --color-edge-hover: #2e2e2e;
+  --color-accent: #e8ff47;
+  --color-accent-hover: #d4eb3a;
+  --color-on-accent: #0a0a0a;
+  --color-t-primary: #f0f0f0;
+  --color-t-muted: #555555;
+  --color-t-faint: #333333;
+  --color-purple-dark: #1a1528;
+  --color-purple: #2d2442;
+  --color-purple-mid: #4a3f6b;
+  --color-purple-soft: #7c6ba8;
+  --color-purple-glow: #a78bfa;
+  --color-pink-dark: #2a1520;
+  --color-pink: #4a2438;
+  --color-pink-mid: #7d3a5c;
+  --color-pink-hot: #ec4899;
+  --color-pink-soft: #f472b6;
+  --scrollbar-track: #0a0a0a;
+  --scrollbar-thumb: #1e1e1e;
+  --scrollbar-thumb-hover: #2e2e2e;
+  /* Calendar status pills - dark theme */
+  --status-wishlist-bg: rgba(85, 85, 85, 0.25);
+  --status-applied-bg: rgba(167, 139, 250, 0.25);
+  --status-screening-bg: rgba(251, 191, 36, 0.25);
+  --status-interview-bg: rgba(251, 146, 60, 0.25);
+  --status-offer-bg: rgba(232, 255, 71, 0.2);
+  --status-rejected-bg: rgba(248, 113, 113, 0.2);
+  --status-ghosted-bg: rgba(68, 68, 68, 0.25);
+  --status-offer-text: #e8ff47;
+}
+
 @layer base {
   * {
     font-family: "DM Mono", ui-monospace, monospace;
@@ -17,6 +89,9 @@
     background: #e8ff4730;
   }
   input[type="date"]::-webkit-calendar-picker-indicator {
+    opacity: 0.6;
+  }
+[data-theme="dark"] input[type="date"]::-webkit-calendar-picker-indicator {
     filter: invert(0.5);
   }
 }
@@ -52,9 +127,9 @@
 .animate-shimmer {
   background: linear-gradient(
     90deg,
-    #111 0%,
-    #1a1a1a 50%,
-    #111 100%
+    var(--color-surface) 0%,
+    var(--color-edge) 50%,
+    var(--color-surface) 100%
   );
   background-size: 200% 100%;
   animation: shimmer 1.5s ease infinite;
@@ -73,14 +148,14 @@
   height: 6px;
 }
 .scroll-thin::-webkit-scrollbar-track {
-  background: #0a0a0a;
+  background: var(--scrollbar-track);
 }
 .scroll-thin::-webkit-scrollbar-thumb {
-  background: #1e1e1e;
+  background: var(--scrollbar-thumb);
   border-radius: 3px;
 }
 .scroll-thin::-webkit-scrollbar-thumb:hover {
-  background: #2e2e2e;
+  background: var(--scrollbar-thumb-hover);
 }
 .scroll-thin-y::-webkit-scrollbar {
   width: 5px;
@@ -89,13 +164,13 @@
   background: transparent;
 }
 .scroll-thin-y::-webkit-scrollbar-thumb {
-  background: #1e1e1e;
+  background: var(--scrollbar-thumb);
   border-radius: 3px;
 }
 
 /* Kanban board: subtle gradient shift (disabled when prefers-reduced-motion) */
 .kanban-board-bg {
-  background: linear-gradient(135deg, #f7f4f8 0%, #feeafa 50%, #f0edf5 100%);
+  background: linear-gradient(135deg, var(--color-purple-dark) 0%, var(--color-pink-dark) 50%, var(--color-purple) 100%);
   background-size: 200% 200%;
   animation: kanban-gradient-shift 12s ease-in-out infinite;
 }

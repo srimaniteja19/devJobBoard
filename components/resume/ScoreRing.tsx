@@ -30,7 +30,7 @@ export default function ScoreRing({
         cy={size / 2}
         r={radius}
         fill="none"
-        stroke="#1e1e1e"
+        stroke="var(--color-edge)"
         strokeWidth={strokeWidth}
       />
       <circle

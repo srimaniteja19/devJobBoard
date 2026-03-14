@@ -9,13 +9,23 @@ import type { AppStatus } from "@/types";
 import type { CalendarItem } from "@/lib/applications";
 
 const STATUS_BG: Record<string, string> = {
-  WISHLIST: "bg-[#555]/20",
-  APPLIED: "bg-[#a78bfa]/25",
-  SCREENING: "bg-[#fbbf24]/25",
-  INTERVIEW: "bg-[#fb923c]/25",
-  OFFER: "bg-[#e8ff47]/25",
-  REJECTED: "bg-[#f87171]/20",
-  GHOSTED: "bg-[#444]/20",
+  WISHLIST: "bg-[var(--status-wishlist-bg)]",
+  APPLIED: "bg-[var(--status-applied-bg)]",
+  SCREENING: "bg-[var(--status-screening-bg)]",
+  INTERVIEW: "bg-[var(--status-interview-bg)]",
+  OFFER: "bg-[var(--status-offer-bg)]",
+  REJECTED: "bg-[var(--status-rejected-bg)]",
+  GHOSTED: "bg-[var(--status-ghosted-bg)]",
+};
+
+const STATUS_TEXT: Record<string, string> = {
+  WISHLIST: "text-[#555]",
+  APPLIED: "text-[#a78bfa]",
+  SCREENING: "text-[#fbbf24]",
+  INTERVIEW: "text-[#fb923c]",
+  OFFER: "text-[var(--status-offer-text)]",
+  REJECTED: "text-[#f87171]",
+  GHOSTED: "text-[#444]",
 };
 
 const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -138,7 +148,7 @@ export default function InterviewCalendar({ initialItems }: Props) {
                     <span
                       key={item.id}
                       className={`truncate rounded px-0.5 py-0.5 text-[9px] font-medium ${
-                        STATUS_BG[item.status] ?? "bg-edge"
+                        STATUS_BG[item.status] ?? "bg-[var(--color-edge)]"
                       } ${STATUS_COLORS[item.status as AppStatus] ?? "text-t-muted"}`}
                     >
                       {item.type === "follow_up" ? "Follow up" : "Event"} · {item.title.split(": ")[1] ?? item.title}
@@ -176,8 +186,8 @@ export default function InterviewCalendar({ initialItems }: Props) {
                 <Link
                   key={item.id}
                   href={`/applications/${item.applicationId}`}
-                  className={`block rounded border p-3 transition-theme hover:border-accent/50 ${
-                    STATUS_BG[item.status] ?? "border-edge bg-bg"
+                  className={`block rounded border border-edge p-3 transition-theme hover:border-accent/50 ${
+                    STATUS_BG[item.status] ?? "bg-bg"
                   }`}
                 >
                   <span className={`text-[12px] font-medium ${STATUS_COLORS[item.status as AppStatus] ?? "text-t-primary"}`}>

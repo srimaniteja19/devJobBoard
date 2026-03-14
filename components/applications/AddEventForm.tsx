@@ -94,7 +94,7 @@ export default function AddEventForm({ applicationId }: AddEventFormProps) {
         <button
           type="submit"
           disabled={loading}
-          className="press inline-flex items-center gap-1 bg-accent px-3 py-1.5 text-[12px] font-medium text-bg hover:bg-accent-hover disabled:opacity-50"
+          className="press inline-flex items-center gap-1 bg-accent px-3 py-1.5 text-[12px] font-medium text-on-accent hover:bg-accent-hover disabled:opacity-50"
         >
           {loading && <Loader2 className="h-3 w-3 animate-spin" />}
           Save

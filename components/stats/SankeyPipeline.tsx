@@ -69,11 +69,11 @@ export default function SankeyPipeline({ funnel }: SankeyPipelineProps) {
   }
 
   const tooltipStyle = {
-    backgroundColor: "#111111",
-    border: "1px solid #1e1e1e",
+    backgroundColor: "var(--color-surface)",
+    border: "1px solid var(--color-edge)",
     borderRadius: "6px",
     fontSize: 11,
-    color: "#f0f0f0",
+    color: "var(--color-t-primary)",
   };
 
   return (
@@ -95,11 +95,11 @@ export default function SankeyPipeline({ funnel }: SankeyPipelineProps) {
           margin={{ top: 10, right: 20, bottom: 10, left: 20 }}
           node={{
             fill: "#a78bfa",
-            stroke: "#0a0a0a",
+            stroke: "var(--color-edge)",
             strokeWidth: 1,
           }}
           link={{
-            fill: "#e8ff47",
+            fill: "var(--color-accent)",
             fillOpacity: 0.65,
             stroke: "none",
           }}

@@ -11,13 +11,13 @@ interface Props {
 
 export default function ApplicationsViewSwitcher({ mode, onModeChange }: Props) {
   return (
-    <div className="flex items-center gap-1 rounded-lg border border-[#1e1e1e] bg-[#111] p-0.5">
+    <div className="flex items-center gap-1 rounded-lg border border-edge bg-surface p-0.5">
       <button
         type="button"
         onClick={() => onModeChange("table")}
         className={`flex items-center gap-1.5 rounded px-2.5 py-1.5 text-[12px] transition-theme ${
           mode === "table"
-            ? "bg-accent text-bg"
+            ? "bg-accent text-on-accent"
             : "text-t-muted hover:text-t-primary"
         }`}
       >
@@ -29,7 +29,7 @@ export default function ApplicationsViewSwitcher({ mode, onModeChange }: Props) 
         onClick={() => onModeChange("cards")}
         className={`flex items-center gap-1.5 rounded px-2.5 py-1.5 text-[12px] transition-theme ${
           mode === "cards"
-            ? "bg-accent text-bg"
+            ? "bg-accent text-on-accent"
             : "text-t-muted hover:text-t-primary"
         }`}
       >

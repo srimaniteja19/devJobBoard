@@ -45,7 +45,7 @@ export default function DeleteButton({ applicationId }: DeleteButtonProps) {
       <button
         onClick={handleDelete}
         disabled={loading}
-        className="press inline-flex items-center gap-1 bg-[#f87171] px-2 py-0.5 text-[11px] font-medium text-bg hover:bg-[#ef4444] disabled:opacity-50"
+        className="press inline-flex items-center gap-1 bg-[#f87171] px-2 py-0.5 text-[11px] font-medium text-white hover:bg-[#ef4444] disabled:opacity-50"
       >
         {loading && <Loader2 className="h-3 w-3 animate-spin" />}
         Yes

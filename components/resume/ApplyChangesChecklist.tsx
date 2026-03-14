@@ -157,7 +157,7 @@ export default function ApplyChangesChecklist({
 
         <div className="overflow-y-auto p-4" style={{ maxHeight: "60vh" }}>
           <div className="mb-4 flex items-center gap-2">
-            <div className="h-2 flex-1 overflow-hidden rounded-full bg-[#1e1e1e]">
+            <div className="h-2 flex-1 overflow-hidden rounded-full bg-edge">
               <div
                 className="h-full rounded-full bg-accent transition-all duration-300"
                 style={{
@@ -219,7 +219,7 @@ export default function ApplyChangesChecklist({
               type="button"
               onClick={handleMoveToApplied}
               disabled={movingToApplied}
-              className="flex w-full items-center justify-center gap-2 bg-accent px-4 py-2.5 text-[13px] font-medium text-bg transition-colors hover:bg-accent-hover disabled:opacity-50"
+              className="flex w-full items-center justify-center gap-2 bg-accent px-4 py-2.5 text-[13px] font-medium text-on-accent transition-colors hover:bg-accent-hover disabled:opacity-50"
             >
               {movingToApplied ? (
                 "Updating..."

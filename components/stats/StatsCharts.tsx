@@ -64,11 +64,11 @@ export default function StatsCharts({
   const stackData = topStacks.map(([name, count]) => ({ name, count }));
 
   const tooltipStyle = {
-    backgroundColor: "#111111",
-    border: "1px solid #1e1e1e",
+    backgroundColor: "var(--color-surface)",
+    border: "1px solid var(--color-edge)",
     borderRadius: "6px",
     fontSize: 11,
-    color: "#f0f0f0",
+    color: "var(--color-t-primary)",
   };
 
   return (
@@ -96,29 +96,29 @@ export default function StatsCharts({
               <AreaChart data={weeklyData}>
                 <defs>
                   <linearGradient id="areaFill" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#e8ff47" stopOpacity={0.15} />
-                    <stop offset="95%" stopColor="#e8ff47" stopOpacity={0} />
+                    <stop offset="5%" stopColor="var(--color-accent)" stopOpacity={0.15} />
+                    <stop offset="95%" stopColor="var(--color-accent)" stopOpacity={0} />
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="#1a1a1a" />
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--color-edge)" />
                 <XAxis
                   dataKey="week"
-                  tick={{ fontSize: 10, fill: "#555" }}
+                  tick={{ fontSize: 10, fill: "var(--color-t-muted)" }}
                   tickFormatter={(v) => {
                     const d = new Date(v);
                     return `${d.getMonth() + 1}/${d.getDate()}`;
                   }}
-                  stroke="#1a1a1a"
+                  stroke="var(--color-edge)"
                 />
-                <YAxis tick={{ fontSize: 10, fill: "#555" }} allowDecimals={false} stroke="#1a1a1a" width={30} />
+                <YAxis tick={{ fontSize: 10, fill: "var(--color-t-muted)" }} allowDecimals={false} stroke="var(--color-edge)" width={30} />
                 <Tooltip contentStyle={tooltipStyle} />
                 <Area
                   type="monotone"
                   dataKey="count"
-                  stroke="#e8ff47"
+                  stroke="var(--color-accent)"
                   strokeWidth={2}
                   fill="url(#areaFill)"
-                  dot={{ r: 3, fill: "#e8ff47", stroke: "#0a0a0a", strokeWidth: 2 }}
+                  dot={{ r: 3, fill: "var(--color-accent)", stroke: "var(--color-bg)", strokeWidth: 2 }}
                 />
               </AreaChart>
             </ResponsiveContainer>
@@ -143,7 +143,7 @@ export default function StatsCharts({
                   paddingAngle={2}
                   dataKey="value"
                   label={({ name, value }) => `${name} (${value})`}
-                  stroke="#0a0a0a"
+                  stroke="var(--color-bg)"
                   fontSize={10}
                 >
                   {pieData.map((entry, i) => (
@@ -166,9 +166,9 @@ export default function StatsCharts({
             </h3>
             <ResponsiveContainer width="100%" height={200}>
               <BarChart data={stackResponseRates} layout="vertical">
-                <CartesianGrid strokeDasharray="3 3" stroke="#1a1a1a" />
-                <XAxis type="number" tick={{ fontSize: 10, fill: "#555" }} domain={[0, 100]} unit="%" stroke="#1a1a1a" />
-                <YAxis type="category" dataKey="tag" tick={{ fontSize: 10, fill: "#555" }} width={70} stroke="#1a1a1a" />
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--color-edge)" />
+                <XAxis type="number" tick={{ fontSize: 10, fill: "var(--color-t-muted)" }} domain={[0, 100]} unit="%" stroke="var(--color-edge)" />
+                <YAxis type="category" dataKey="tag" tick={{ fontSize: 10, fill: "var(--color-t-muted)" }} width={70} stroke="var(--color-edge)" />
                 <Tooltip contentStyle={tooltipStyle} formatter={(v) => `${v}%`} />
                 <Bar dataKey="rate" fill="#a78bfa" radius={[0, 2, 2, 0]} />
               </BarChart>
@@ -183,9 +183,9 @@ export default function StatsCharts({
             </h3>
             <ResponsiveContainer width="100%" height={200}>
               <BarChart data={bestDayData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#1a1a1a" />
-                <XAxis dataKey="day" tick={{ fontSize: 10, fill: "#555" }} stroke="#1a1a1a" />
-                <YAxis tick={{ fontSize: 10, fill: "#555" }} allowDecimals={false} stroke="#1a1a1a" width={30} />
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--color-edge)" />
+                <XAxis dataKey="day" tick={{ fontSize: 10, fill: "var(--color-t-muted)" }} stroke="var(--color-edge)" />
+                <YAxis tick={{ fontSize: 10, fill: "var(--color-t-muted)" }} allowDecimals={false} stroke="var(--color-edge)" width={30} />
                 <Tooltip contentStyle={tooltipStyle} />
                 <Bar dataKey="applied" fill="#e8ff47" name="Applied" radius={[2, 2, 0, 0]} />
                 <Bar dataKey="responses" fill="#a78bfa" name="Responses" radius={[2, 2, 0, 0]} />

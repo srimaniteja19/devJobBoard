@@ -302,7 +302,7 @@ export default function EditApplicationModal({
             <button
               type="submit"
               disabled={isSubmitting}
-              className="press inline-flex items-center gap-1.5 bg-accent px-4 py-2.5 text-[13px] font-medium text-bg transition-theme hover:bg-accent-hover disabled:opacity-50"
+              className="press inline-flex items-center gap-1.5 bg-accent px-4 py-2.5 text-[13px] font-medium text-on-accent transition-theme hover:bg-accent-hover disabled:opacity-50"
             >
               {isSubmitting ? (
                 <Loader2 className="h-3.5 w-3.5 animate-spin" />

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { LayoutDashboard, Table2, BarChart3, Activity, Calendar } from "lucide-react";
 import AuthButton from "@/components/layout/AuthButton";
+import ThemeToggle from "@/components/layout/ThemeToggle";
 import AddButton from "@/components/applications/AddButton";
 import { useSearch } from "@/components/providers/SearchProvider";
 
@@ -78,7 +79,10 @@ export default function MainLayout({
               </button>
             </div>
           </div>
-          <AuthButton />
+          <div className="flex items-center gap-2">
+            <ThemeToggle />
+            <AuthButton />
+          </div>
         </nav>
       </header>
 

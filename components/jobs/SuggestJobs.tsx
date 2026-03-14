@@ -87,7 +87,7 @@ export default function SuggestJobs({ applicationId, company }: Props) {
           </p>
           <div className="space-y-3">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="animate-shimmer h-16 rounded bg-[#111]" />
+              <div key={i} className="animate-shimmer h-16 rounded bg-surface" />
             ))}
           </div>
         </div>
@@ -100,7 +100,7 @@ export default function SuggestJobs({ applicationId, company }: Props) {
       )}
 
       {status === "success" && jobs.length > 0 && (
-        <div className="mt-4 rounded-md border border-edge bg-[#0d0d0d] p-5">
+        <div className="mt-4 rounded-md border border-edge bg-bg p-5">
           <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
             <h3 className="text-[13px] font-medium text-t-primary">
               Similar roles at {company} & other companies

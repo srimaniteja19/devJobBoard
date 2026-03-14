@@ -32,16 +32,16 @@ function FilterSection({
 }) {
   const [open, setOpen] = useState(defaultOpen);
   return (
-    <div className="border-b border-[#d4dce6] pb-3 last:border-0">
+    <div className="border-b border-edge pb-3 last:border-0">
       <button
         type="button"
         onClick={() => setOpen(!open)}
-        className="flex w-full items-center justify-between py-2 text-left text-[13px] font-semibold text-[#1e3a5f]"
+        className="flex w-full items-center justify-between py-2 text-left text-[13px] font-semibold text-t-primary"
       >
         <span>
           {title}
           {count !== undefined && count > 0 && (
-            <span className="ml-1.5 font-normal text-[#6b7c8f]">({count})</span>
+            <span className="ml-1.5 font-normal text-t-muted">({count})</span>
           )}
         </span>
         {open ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
@@ -102,7 +102,7 @@ export default function ApplicationsCardView({ applications }: { applications: A
   const hasFilters = searchQuery || statusFilter || dateFilter;
 
   return (
-    <div className="rounded-xl border border-[#d4dce6] bg-[#e8eef5] p-4 sm:p-6">
+    <div className="rounded-xl border border-edge bg-surface p-4 sm:p-6">
       <div className="flex flex-col gap-6 lg:flex-row">
         {/* Sidebar filters */}
         <aside className="w-full shrink-0 lg:w-56">
@@ -112,17 +112,17 @@ export default function ApplicationsCardView({ applications }: { applications: A
               placeholder="Search company/role..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full rounded-lg border border-[#d4dce6] bg-white px-3 py-2.5 text-[13px] text-[#1e3a5f] placeholder:text-[#8a9aad] focus:border-[#4a90d9] focus:outline-none focus:ring-1 focus:ring-[#4a90d9]"
+              className="w-full rounded-lg border border-edge bg-bg px-3 py-2.5 text-[13px] text-t-primary placeholder:text-t-faint focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
             />
             <div className="space-y-1">
-              <h2 className="text-[13px] font-semibold text-[#1e3a5f]">Job Filters</h2>
+              <h2 className="text-[13px] font-semibold text-t-primary">Job Filters</h2>
               <FilterSection title="Status" defaultOpen={true}>
                 <div className="space-y-1">
                   <button
                     type="button"
                     onClick={() => setStatusFilter("")}
                     className={`block w-full rounded px-2 py-1.5 text-left text-[12px] ${
-                      !statusFilter ? "bg-[#d4e3f7] font-medium text-[#1e3a5f]" : "text-[#6b7c8f] hover:bg-[#eef2f7]"
+                      !statusFilter ? "bg-accent/15 font-medium text-t-primary" : "text-t-muted hover:bg-edge/50"
                     }`}
                   >
                     All
@@ -133,7 +133,7 @@ export default function ApplicationsCardView({ applications }: { applications: A
                       type="button"
                       onClick={() => setStatusFilter(s)}
                       className={`block w-full rounded px-2 py-1.5 text-left text-[12px] ${
-                        statusFilter === s ? "bg-[#d4e3f7] font-medium text-[#1e3a5f]" : "text-[#6b7c8f] hover:bg-[#eef2f7]"
+                        statusFilter === s ? "bg-accent/15 font-medium text-t-primary" : "text-t-muted hover:bg-edge/50"
                       }`}
                     >
                       {STATUS_LABELS[s as AppStatus]} ({statusCounts[s] ?? 0})
@@ -149,7 +149,7 @@ export default function ApplicationsCardView({ applications }: { applications: A
                       type="button"
                       onClick={() => setDateFilter(opt.value)}
                       className={`block w-full rounded px-2 py-1.5 text-left text-[12px] ${
-                        dateFilter === opt.value ? "bg-[#d4e3f7] font-medium text-[#1e3a5f]" : "text-[#6b7c8f] hover:bg-[#eef2f7]"
+                        dateFilter === opt.value ? "bg-accent/15 font-medium text-t-primary" : "text-t-muted hover:bg-edge/50"
                       }`}
                     >
                       {opt.label}
@@ -162,7 +162,7 @@ export default function ApplicationsCardView({ applications }: { applications: A
               <button
                 type="button"
                 onClick={handleClearFilters}
-                className="text-[12px] font-medium text-[#4a90d9] hover:underline"
+                className="text-[12px] font-medium text-accent hover:underline"
               >
                 clear all filters & search
               </button>
@@ -172,7 +172,7 @@ export default function ApplicationsCardView({ applications }: { applications: A
 
         {/* Card grid */}
         <div className="min-w-0 flex-1">
-          <p className="mb-4 text-[13px] text-[#6b7c8f]">
+          <p className="mb-4 text-[13px] text-t-muted">
             {filtered.length} {filtered.length === 1 ? "application" : "applications"}
           </p>
           <div className="grid gap-4 sm:grid-cols-2">
@@ -180,12 +180,12 @@ export default function ApplicationsCardView({ applications }: { applications: A
               <Link
                 key={a.id}
                 href={`/applications/${a.id}`}
-                className="group flex items-start justify-between gap-3 rounded-lg border border-[#e0e7ef] bg-white p-4 shadow-sm transition-all hover:border-[#b8c5d6] hover:shadow-md"
+                className="group flex items-start justify-between gap-3 rounded-lg border border-edge bg-bg p-4 shadow-sm transition-all hover:border-edge-hover hover:shadow-md"
               >
                 <div className="min-w-0 flex-1">
-                  <h3 className="text-[15px] font-semibold text-[#1e3a5f]">{a.role}</h3>
-                  <p className="mt-1 text-[13px] font-medium text-[#4a6b8a]">{a.company}</p>
-                  <p className="mt-1 text-[12px] text-[#6b7c8f]">
+                  <h3 className="text-[15px] font-semibold text-t-primary">{a.role}</h3>
+                  <p className="mt-1 text-[13px] font-medium text-t-muted">{a.company}</p>
+                  <p className="mt-1 text-[12px] text-t-muted">
                     Added {format(new Date(a.createdAt), "MMM d, yyyy")}
                     {a.location && (
                       <>
@@ -197,12 +197,12 @@ export default function ApplicationsCardView({ applications }: { applications: A
                   <span
                     className={`mt-2 inline-block rounded px-2 py-0.5 text-[11px] font-medium ${
                       a.status === "OFFER"
-                        ? "bg-[#d4edda] text-[#1e5f2e]"
+                        ? "bg-[var(--status-offer-bg)] text-[var(--status-offer-text)]"
                         : a.status === "REJECTED" || a.status === "GHOSTED"
-                        ? "bg-[#f8d7da] text-[#721c24]"
+                        ? "bg-[var(--status-rejected-bg)] text-[#f87171]"
                         : a.status === "INTERVIEW"
-                        ? "bg-[#fff3cd] text-[#856404]"
-                        : "bg-[#eef2f7] text-[#4a6b8a]"
+                        ? "bg-[var(--status-interview-bg)] text-[#fbbf24]"
+                        : "bg-[var(--status-applied-bg)] text-[#a78bfa]"
                     }`}
                   >
                     {STATUS_LABELS[a.status as AppStatus]}
@@ -211,7 +211,7 @@ export default function ApplicationsCardView({ applications }: { applications: A
                 <button
                   type="button"
                   onClick={(e) => e.preventDefault()}
-                  className="shrink-0 rounded p-1.5 text-[#8a9aad] opacity-0 transition-opacity hover:bg-[#eef2f7] hover:text-[#1e3a5f] group-hover:opacity-100"
+                  className="shrink-0 rounded p-1.5 text-t-faint opacity-0 transition-opacity hover:bg-edge hover:text-t-primary group-hover:opacity-100"
                   aria-label="More options"
                 >
                   <MoreHorizontal className="h-4 w-4" />
@@ -220,14 +220,14 @@ export default function ApplicationsCardView({ applications }: { applications: A
             ))}
           </div>
           {filtered.length === 0 && (
-            <div className="rounded-lg border border-[#d4dce6] bg-white p-12 text-center">
-              <p className="text-[14px] text-[#6b7c8f]">
+            <div className="rounded-lg border border-edge bg-bg p-12 text-center">
+              <p className="text-[14px] text-t-muted">
                 No applications match your filters. Try adjusting your search or filters.
               </p>
               <button
                 type="button"
                 onClick={handleClearFilters}
-                className="mt-3 text-[13px] font-medium text-[#4a90d9] hover:underline"
+                className="mt-3 text-[13px] font-medium text-accent hover:underline"
               >
                 Clear all filters
               </button>

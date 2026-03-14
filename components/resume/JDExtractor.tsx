@@ -179,7 +179,7 @@ export default function JDExtractor({
                     onChange={(e) => onNotesChange?.(e.target.value)}
                     placeholder="Paste the full job description here..."
                     rows={8}
-                    className="mt-2 min-h-[200px] w-full resize-y border border-[#1e1e1e] bg-[#0d0d0d] px-3 py-2 text-[13px] font-light text-[#f0f0f0] placeholder:text-[#555] focus:outline-none focus:ring-1 focus:ring-accent"
+                    className="mt-2 min-h-[200px] w-full resize-y border border-edge bg-bg px-3 py-2 text-[13px] font-light text-t-primary placeholder:text-t-muted focus:outline-none focus:ring-1 focus:ring-accent"
                   />
                   <p className="mt-1 text-[11px] text-[#333]">
                     Tip: Copy everything from Requirements to the end

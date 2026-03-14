@@ -165,7 +165,7 @@ export default function KanbanCard({
                   cy={10}
                   r={8}
                   fill="none"
-                  stroke="#1e1e1e"
+                  stroke="var(--color-edge)"
                   strokeWidth={2}
                 />
                 <circle
@@ -183,7 +183,7 @@ export default function KanbanCard({
               </svg>
               {showTooltip && (
                 <div
-                  className="absolute bottom-full right-0 mb-1 z-10 rounded border border-edge bg-[#111] px-2 py-1 text-[10px] text-t-primary"
+                  className="absolute bottom-full right-0 mb-1 z-10 rounded border border-edge bg-surface px-2 py-1 text-[10px] text-t-primary"
                   style={{ fontFamily: "'DM Sans', sans-serif" }}
                 >
                   Resume match: {resumeMatchScore}%
