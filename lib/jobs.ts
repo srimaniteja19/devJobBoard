@@ -9,7 +9,7 @@ export interface JobListing {
   location: string;
   url: string;
   description: string;
-  source: "greenhouse" | "ashby";
+  source: "greenhouse" | "ashby" | "lever" | "custom";
   publishedAt: string;
   department?: string;
   workplaceType?: string;
@@ -24,9 +24,9 @@ async function _fetchAllJobsUncached(): Promise<JobListing[]> {
   return [...greenhouse, ...ashby];
 }
 
-/** Cached for 15 min – first load fetches, subsequent loads hit cache */
-export const fetchAllJobs = unstable_cache(
+/** Cached base jobs (15 min). Does not include user's custom careers pages. */
+export const fetchAllJobsBase = unstable_cache(
   _fetchAllJobsUncached,
-  ["jobs-feed"],
+  ["jobs-feed-base"],
   { revalidate: 900 }
 );

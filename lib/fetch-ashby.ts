@@ -83,10 +83,15 @@ async function fetchBoard(
 }
 
 export async function fetchAllAshbyJobs(): Promise<NormalizedJob[]> {
-  const results = await Promise.allSettled(
-    ASHBY_BOARDS.map((b) => fetchBoard(b.name, b.company))
-  );
+  return fetchAshbyFromBoards(ASHBY_BOARDS);
+}
 
+export async function fetchAshbyFromBoards(
+  boards: { name: string; company: string }[]
+): Promise<NormalizedJob[]> {
+  const results = await Promise.allSettled(
+    boards.map((b) => fetchBoard(b.name, b.company))
+  );
   const jobs: NormalizedJob[] = [];
   for (const r of results) {
     if (r.status === "fulfilled" && Array.isArray(r.value)) {

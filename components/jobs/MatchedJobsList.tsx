@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { ExternalLink, RefreshCw, Briefcase, Search, X, MapPin } from "lucide-react";
+import AddCareersPage from "./AddCareersPage";
 
 type DateFilterKey = "1h" | "2h" | "6h" | "24h" | "3d" | "1w";
 type WorkType = "remote" | "hybrid" | "onsite";
@@ -32,7 +33,7 @@ interface MatchedJob {
   company: string;
   location: string;
   url: string;
-  source: "greenhouse" | "ashby";
+  source: "greenhouse" | "ashby" | "lever" | "custom";
   matchScore: number;
   matchReason: string;
 }
@@ -173,6 +174,7 @@ export default function MatchedJobsList() {
     <div className="grid gap-6 lg:grid-cols-[280px_1fr]">
       {/* Left sidebar: filters */}
       <aside className="space-y-6">
+        <AddCareersPage onAdd={fetchJobs} />
         <div className="rounded-2xl border border-jobs-edge/50 bg-jobs-card p-5 shadow-sm">
           <div className="relative mb-4">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-jobs-muted" />

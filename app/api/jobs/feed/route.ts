@@ -1,12 +1,12 @@
 import { NextResponse } from "next/server";
-import { fetchAllJobs } from "@/lib/jobs";
+import { fetchAllJobsBase } from "@/lib/jobs";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
 export async function GET() {
   try {
-    const jobs = await fetchAllJobs();
+    const jobs = await fetchAllJobsBase();
     return NextResponse.json({ jobs, total: jobs.length });
   } catch (e) {
     console.error("Jobs feed error:", e);

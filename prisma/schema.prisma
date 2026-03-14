@@ -64,6 +64,22 @@ model User {
   sessions     Session[]
   applications Application[]
   activities   ActivityLog[]
+  jobSources   UserJobSource[]
+}
+
+model UserJobSource {
+  id         String   @id @default(cuid())
+  userId     String
+  company    String
+  source     String   // 'greenhouse' | 'ashby' | 'lever' | 'custom'
+  boardToken String   // Board slug or full URL for custom
+  careersUrl String?
+  createdAt  DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, source, boardToken])
+  @@index([userId])
 }
 
 model Application {

@@ -53,6 +53,8 @@ interface ExtractedContext {
   seniority: string;
   coreSkills: string[];
   department: string;
+  experienceRange?: string;
+  workPreference?: string;
 }
 
 interface RawJob {
@@ -166,19 +168,24 @@ export async function POST(
     try {
       const extractModel = genAI.getGenerativeModel({
         model: "gemini-2.5-flash-lite",
-        systemInstruction: `You are a job search assistant. Extract key information from a job application and return ONLY a JSON object with these fields:
+        systemInstruction: `You are a job search assistant. Extract structured information from a job application for finding similar roles. Return ONLY valid JSON with these exact fields:
 {
   "company": string,
   "baseRole": string,
   "seniority": string,
   "coreSkills": string[],
-  "department": string
+  "department": string,
+  "experienceRange": string,
+  "workPreference": string
 }
-- baseRole: e.g. "Software Engineer", "AI Engineer"
-- seniority: e.g. "Senior", "Mid", "Junior", or "" if unclear
-- coreSkills: top 4-5 skills from the JD
-- department: e.g. "Engineering", "Data Science", "Product"
-Return only valid JSON, no markdown, no explanation.`,
+Rules:
+- baseRole: normalized job title (e.g. "Software Engineer", "Product Manager", "Data Scientist")
+- seniority: "Senior", "Mid", "Junior", "Staff", "Lead", or "" if unclear
+- coreSkills: 4-6 specific skills from the role (technologies, frameworks, domains)
+- department: "Engineering", "Product", "Data Science", "Design", "Sales", etc.
+- experienceRange: e.g. "2-5 years", "5+ years" from JD if mentioned, else ""
+- workPreference: "remote", "hybrid", or "onsite" if mentioned
+Return only JSON, no markdown.`,
         generationConfig: { responseMimeType: "application/json" },
       });
       const extractRes = await extractModel.generateContent(userInput);
@@ -218,37 +225,41 @@ Return only valid JSON, no markdown, no explanation.`,
           "You are a job search assistant. Search for currently open job positions and return results as a JSON array only. No markdown, no explanation, no code fence, just the raw JSON array.",
       });
 
-      const searchPrompt = `You are finding similar job openings in two ways. Return ONE combined JSON array.
+      const skillsStr = (ctx.coreSkills || []).join(", ") || "software development";
+      const roleStr = [ctx.seniority, ctx.baseRole].filter(Boolean).join(" ");
+      const companySlug = ctx.company.replace(/\s+/g, "").toLowerCase();
 
-PART 1 – Jobs at ${ctx.company} (user's company). Search in this order:
-- First: ${ctx.company}'s official careers website (e.g. careers.${ctx.company.replace(/\s+/g, "").toLowerCase()}.com, ${ctx.company.replace(/\s+/g, "").toLowerCase()}.com/careers, ${ctx.company.replace(/\s+/g, "").toLowerCase()}.com/jobs). Include the direct job URL from their site.
-- Then: Hiring Cafe (hiring.cafe), LinkedIn (linkedin.com/jobs), Greenhouse (*.greenhouse.io), Ashby (ashbyhq.com) when they list ${ctx.company} jobs. Use each platform's direct job link.
+      const searchPrompt = `Find similar job openings. Return ONE JSON array of up to 10 jobs.
 
-PART 2 – Similar roles at OTHER companies (not ${ctx.company}). Same type of role: ${ctx.seniority || ""} ${ctx.baseRole} in ${ctx.department || "Engineering"}, skills: ${(ctx.coreSkills || []).join(", ") || "software development"}. Search only:
-- Hiring Cafe, LinkedIn Jobs, Greenhouse, Ashby. Include jobs from various other companies that match the role and skills. Each job url must be from one of these four sources only.
+USER CONTEXT:
+- Company: ${ctx.company}
+- Role: ${roleStr} in ${ctx.department || "Engineering"}
+- Skills: ${skillsStr}
+- Experience: ${ctx.experienceRange || "not specified"}
+- Work: ${ctx.workPreference || "any"}
 
-ALLOWED URL SOURCES (every job url must match one of these):
-- ${ctx.company}'s own domain (careers page, jobs page)
-- hiring.cafe
-- linkedin.com
-- greenhouse.io (any subdomain)
-- ashbyhq.com
+SEARCH STRATEGY:
+1) Jobs at ${ctx.company}: Search for "${ctx.company} careers" and "${ctx.company} jobs". Look for:
+   - boards.greenhouse.io (Greenhouse job boards)
+   - jobs.ashbyhq.com (Ashby job boards)
+   - ${companySlug}.com/careers, careers.${companySlug}.com
+   - hiring.cafe, linkedin.com/jobs when listing ${ctx.company}
 
-CRITICAL – Recency: Only jobs posted in the LAST 24 HOURS. postedHoursAgo 0–24 only. USA only.
+2) Similar roles at other companies: Search for "${roleStr} ${skillsStr}" on:
+   - hiring.cafe
+   - linkedin.com/jobs
+   - Greenhouse and Ashby job boards (boards.greenhouse.io, jobs.ashbyhq.com)
 
-Return a JSON array of up to 10 jobs (mix of ${ctx.company} jobs and similar roles at other companies), each with:
-{
-  "title": string,
-  "company": string,
-  "location": string,
-  "url": string,
-  "matchReason": string,
-  "postedRecency": string,
-  "postedHoursAgo": number
-}
-- url: direct apply link from one of the allowed sources above
-- matchReason: e.g. "Same role at your company" or "Similar role at [Other Company]"
-Return only the JSON array, nothing else.`;
+REQUIREMENTS:
+- Every URL must be from: greenhouse.io, ashbyhq.com, hiring.cafe, linkedin.com, or ${ctx.company}'s domain
+- Only jobs posted in LAST 24 HOURS (postedHoursAgo 0–24)
+- USA locations only (remote, US cities/states)
+- Prefer roles matching skills: ${skillsStr}
+
+Return JSON array only, each object:
+{"title": string, "company": string, "location": string, "url": string, "matchReason": string, "postedRecency": string, "postedHoursAgo": number}
+- matchReason: brief why it matches (e.g. "Same role at ${ctx.company}", "Similar ${ctx.baseRole} at [Company]")
+- url: direct apply link, no tracking redirects`;
 
       const searchRes = await searchModel.generateContent(searchPrompt);
       searchText = searchRes?.response?.text?.() ?? "";

@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { authenticatedAction } from "@/lib/api-auth";
-import { fetchAllJobs } from "@/lib/jobs";
+import { fetchAllJobsBase } from "@/lib/jobs";
+import { fetchUserJobSourcesJobs } from "@/lib/fetch-user-jobs";
 import { filterJobs, type DateFilterKey, type ExperienceFilterKey, type WorkType } from "@/lib/job-filters";
 import type { JobListing } from "@/lib/jobs";
 
@@ -91,7 +92,10 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    const allJobs = await fetchAllJobs();
+    // User careers pages load first, then base jobs
+    const userJobs = await fetchUserJobSourcesJobs(user.id);
+    const baseJobs = await fetchAllJobsBase();
+    const allJobs = [...userJobs, ...baseJobs];
     const jobs = filterJobs(allJobs, { usaOnly, workTypes, datePosted, experience });
 
     const scored = jobs.map((job) => {
