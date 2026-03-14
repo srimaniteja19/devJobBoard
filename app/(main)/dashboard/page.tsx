@@ -70,11 +70,10 @@ export default async function DashboardPage() {
         streak={streak}
       />
 
-      <ActivityByPeriod data={activityByPeriod} />
-
       <div className="mt-4 sm:mt-6">
         <FollowUpReminders reminders={reminders} />
         <KanbanBoard applications={serialized} />
+        <ActivityByPeriod data={activityByPeriod} />
       </div>
     </div>
   );
