@@ -260,3 +260,35 @@
   --jobs-accent: #2dd4bf;
   --jobs-accent-hover: #5eead4;
 }
+
+/* Dashboard themes - data-dashboard-theme on #dashboard-root */
+#dashboard-root[data-dashboard-theme="focus"] {
+  --dash-board-bg: linear-gradient(145deg, #f8fafc 0%, #f1f5f9 50%, #e2e8f0 100%);
+  --dash-card-border: #e2e8f0;
+  --dash-column-text: #64748b;
+}
+#dashboard-root[data-dashboard-theme="bold"] {
+  --dash-board-bg: linear-gradient(145deg, #1e1b4b 0%, #312e81 50%, #4c1d95 100%);
+  --dash-card-bg: #ffffff;
+  --dash-card-border: #c7d2fe;
+  --dash-column-text: #4338ca;
+  --dash-card-company: #1e1b4b;
+  --dash-stat-applied: #6366f1;
+  --dash-stat-interview: #7c3aed;
+}
+[data-theme="dark"] #dashboard-root[data-dashboard-theme="bold"] {
+  --dash-board-bg: linear-gradient(145deg, #0f0d1e 0%, #1e1b4b 50%, #312e81 100%);
+  --dash-card-bg: #1e293b;
+  --dash-card-border: #6366f1;
+}
+#dashboard-root[data-dashboard-theme="minimal"] {
+  --dash-board-bg: #fafafa;
+  --dash-card-bg: #ffffff;
+  --dash-card-border: #e5e5e5;
+  --dash-column-text: #737373;
+}
+[data-theme="dark"] #dashboard-root[data-dashboard-theme="minimal"] {
+  --dash-board-bg: #0a0a0a;
+  --dash-card-bg: #171717;
+  --dash-card-border: #262626;
+}

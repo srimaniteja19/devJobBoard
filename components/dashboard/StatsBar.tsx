@@ -1,3 +1,5 @@
+export type MetricId = "streak" | "applied" | "active" | "interviews" | "offers" | "rejected";
+
 interface StatsBarProps {
   total: number;
   active: number;
@@ -5,28 +7,35 @@ interface StatsBarProps {
   offers: number;
   rejectionRate: number;
   streak?: number;
+  visibleMetrics?: MetricId[];
 }
 
-export default function StatsBar({ total, active, interviews, offers, rejectionRate, streak = 0 }: StatsBarProps) {
-  const items = [
-    ...(streak > 0
-      ? [{ label: `${streak === 1 ? "day" : "days"} streak`, value: String(streak), colorVar: "--dash-stat-streak" as const }]
-      : []),
-    { label: "Applied", value: total, colorVar: "--dash-stat-applied" as const },
-    { label: "Active", value: active, colorVar: "--dash-stat-applied" as const },
-    { label: "Interviews", value: interviews, colorVar: "--dash-stat-interview" as const },
-    { label: "Offers", value: offers, colorVar: "--dash-stat-offer" as const },
-    { label: "Rejected", value: `${rejectionRate}%`, colorVar: "--dash-stat-rejected" as const },
+export default function StatsBar({
+  total,
+  active,
+  interviews,
+  offers,
+  rejectionRate,
+  streak = 0,
+  visibleMetrics = ["streak", "applied", "active", "interviews", "offers", "rejected"],
+}: StatsBarProps) {
+  const allItems = [
+    { id: "streak" as const, label: `${streak === 1 ? "day" : "days"} streak`, value: String(streak), colorVar: "--dash-stat-streak" as const },
+    { id: "applied" as const, label: "Applied", value: total, colorVar: "--dash-stat-applied" as const },
+    { id: "active" as const, label: "Active", value: active, colorVar: "--dash-stat-applied" as const },
+    { id: "interviews" as const, label: "Interviews", value: interviews, colorVar: "--dash-stat-interview" as const },
+    { id: "offers" as const, label: "Offers", value: offers, colorVar: "--dash-stat-offer" as const },
+    { id: "rejected" as const, label: "Rejected", value: `${rejectionRate}%`, colorVar: "--dash-stat-rejected" as const },
   ];
+  const items = allItems.filter((i) => visibleMetrics.includes(i.id));
+  const displayItems = items.length > 0 ? items : allItems;
 
   return (
-    <div className="grid grid-cols-3 gap-2 sm:flex sm:gap-3">
-      {items.map((s, i) => (
+    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:flex md:flex-wrap md:gap-3">
+      {displayItems.map((s, i) => (
         <div
           key={s.label}
-          className={`flex items-center gap-2 rounded-xl border px-3 py-2.5 transition-theme hover:-translate-y-0.5 sm:min-w-[110px] sm:flex-1 sm:gap-3 sm:px-4 sm:py-3 ${
-            i >= 3 ? "col-span-3 sm:col-span-1" : ""
-          }`}
+          className="flex flex-col justify-center gap-0.5 rounded-xl border px-3 py-2.5 transition-theme hover:-translate-y-0.5 md:min-w-[100px] md:flex-1 md:max-w-[140px] md:px-4 md:py-3"
           style={{
             backgroundColor: "var(--dash-card-bg)",
             borderColor: "var(--dash-card-border)",
