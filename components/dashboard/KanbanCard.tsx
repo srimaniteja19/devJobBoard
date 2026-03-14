@@ -8,14 +8,14 @@ import { GripVertical } from "lucide-react";
 import { motion, useReducedMotion } from "framer-motion";
 import type { AppStatus } from "@/types";
 
-const STATUS_ACCENT: Record<AppStatus, string> = {
-  WISHLIST: "#dee2ff",
-  APPLIED: "#cbc0d3",
-  SCREENING: "#efd3d7",
-  INTERVIEW: "#8e9aaf",
-  OFFER: "#7b8fd4",
-  REJECTED: "#c9a0a5",
-  GHOSTED: "#e8e2ed",
+const STATUS_ACCENT_VAR: Record<AppStatus, string> = {
+  WISHLIST: "var(--dash-status-wishlist)",
+  APPLIED: "var(--dash-status-applied)",
+  SCREENING: "var(--dash-status-screening)",
+  INTERVIEW: "var(--dash-status-interview)",
+  OFFER: "var(--dash-status-offer)",
+  REJECTED: "var(--dash-status-rejected)",
+  GHOSTED: "var(--dash-status-ghosted)",
 };
 
 function getScoreColor(score: number): string {
@@ -75,7 +75,7 @@ export default function KanbanCard({
     transition,
   };
 
-  const accentColor = STATUS_ACCENT[status];
+  const accentColor = STATUS_ACCENT_VAR[status];
 
   const baseTransition = reducedMotion
     ? { duration: 0.1 }
@@ -94,11 +94,7 @@ export default function KanbanCard({
         y: 0,
         scale: isDragging ? (reducedMotion ? 1 : 1.04) : 1,
         rotate: isDragging ? (reducedMotion ? 0 : 1.5) : 0,
-        boxShadow: isDragging
-          ? reducedMotion
-            ? "0 1px 3px rgba(142,154,175,0.10)"
-            : "0 20px 48px rgba(203,192,211,0.45)"
-          : "0 1px 3px rgba(142,154,175,0.10)",
+        boxShadow: isDragging ? "var(--dash-card-shadow-hover)" : "var(--dash-card-shadow)",
         cursor: isDragging ? "grabbing" : "pointer",
       }}
       transition={{
@@ -114,12 +110,16 @@ export default function KanbanCard({
           : {
               scale: 1.02,
               y: -3,
-              boxShadow: "0 12px 32px rgba(203,192,211,0.35)",
+              boxShadow: "var(--dash-card-shadow-hover)",
               transition: { duration: 0.18, ease: "easeOut" },
             }
       }
-      style={sortableStyle}
-      className="group relative cursor-pointer rounded-xl border border-[#e8e2ed] bg-white p-4"
+      style={{
+        ...sortableStyle,
+        backgroundColor: "var(--dash-card-bg)",
+        borderColor: "var(--dash-card-border)",
+      }}
+      className="group relative cursor-pointer rounded-xl border p-4"
       onClick={onClick}
     >
       {/* Top accent line — height 2px → 3px on hover */}
@@ -135,27 +135,27 @@ export default function KanbanCard({
         <button
           {...attributes}
           {...listeners}
-          className="mt-0.5 shrink-0 cursor-grab touch-none opacity-0 transition-opacity duration-150 group-hover:opacity-100 [&_svg]:text-[#cbc0d3]"
+          className="mt-0.5 shrink-0 cursor-grab touch-none opacity-0 transition-opacity duration-150 group-hover:opacity-100 [&_svg]:text-[var(--dash-column-text)]"
           onClick={(e) => e.stopPropagation()}
         >
           <GripVertical className="h-3.5 w-3.5" />
         </button>
         <div className="min-w-0 flex-1">
           <p
-            className="truncate text-[15px] italic text-[#2d2535]"
-            style={{ fontFamily: "'Instrument Serif', serif" }}
+            className="truncate text-[15px] italic"
+            style={{ color: "var(--dash-card-company)", fontFamily: "'Instrument Serif', serif" }}
           >
             {company}
           </p>
           <p
-            className="truncate text-[13px] font-light text-[#8e9aaf]"
-            style={{ fontFamily: "'DM Sans', sans-serif" }}
+            className="truncate text-[13px] font-light"
+            style={{ color: "var(--dash-card-role)", fontFamily: "'DM Sans', sans-serif" }}
           >
             {role}
           </p>
           <p
-            className="mt-0.5 text-[11px] font-light text-[#cbc0d3]"
-            style={{ fontFamily: "'DM Sans', sans-serif" }}
+            className="mt-0.5 text-[11px] font-light"
+            style={{ color: "var(--dash-card-time)", fontFamily: "'DM Sans', sans-serif" }}
           >
             {timeAgo}
           </p>

@@ -39,6 +39,39 @@
   --status-rejected-bg: rgba(248, 113, 113, 0.2);
   --status-ghosted-bg: rgba(100, 100, 100, 0.1);
   --status-offer-text: #166534;
+  /* Dashboard - light */
+  --dash-board-bg: linear-gradient(145deg, #eef2ff 0%, #f5f3ff 40%, #fdf4ff 100%);
+  --dash-column-bg: rgba(255,255,255,0.6);
+  --dash-column-empty: rgba(248,250,252,0.8);
+  --dash-card-bg: #ffffff;
+  --dash-card-border: #e2e8f0;
+  --dash-card-shadow: 0 1px 3px rgba(15,23,42,0.06);
+  --dash-card-shadow-hover: 0 12px 24px -8px rgba(99,102,241,0.2);
+  --dash-column-text: #64748b;
+  --dash-column-count-bg: #f1f5f9;
+  --dash-column-count-border: #e2e8f0;
+  --dash-empty-border: rgba(203,213,225,0.6);
+  --dash-empty-text: #94a3b8;
+  --dash-board-border: rgba(148,163,184,0.25);
+  --dash-card-company: #1e293b;
+  --dash-card-role: #64748b;
+  --dash-card-time: #94a3b8;
+  --dash-status-wishlist: #c7d2fe;
+  --dash-status-applied: #a5b4fc;
+  --dash-status-screening: #fcd34d;
+  --dash-status-interview: #93c5fd;
+  --dash-status-offer: #86efac;
+  --dash-status-rejected: #fca5a5;
+  --dash-status-ghosted: #d1d5db;
+  --dash-stat-streak: #059669;
+  --dash-stat-applied: #4d7c0f;
+  --dash-stat-interview: #7c3aed;
+  --dash-stat-offer: #ea580c;
+  --dash-stat-rejected: #dc2626;
+  --dash-reminder-overdue: #dc2626;
+  --dash-reminder-today: #ea580c;
+  --dash-reminder-upcoming: #059669;
+  --dash-reminder-badge-bg: rgba(220,38,38,0.15);
 }
 
 /* Dark theme */
@@ -75,6 +108,39 @@
   --status-rejected-bg: rgba(248, 113, 113, 0.2);
   --status-ghosted-bg: rgba(68, 68, 68, 0.25);
   --status-offer-text: #e8ff47;
+  /* Dashboard - dark */
+  --dash-board-bg: linear-gradient(145deg, #1e1b4b 0%, #312e81 40%, #4c1d95 60%, #581c87 100%);
+  --dash-column-bg: rgba(30,27,75,0.5);
+  --dash-column-empty: rgba(51,65,85,0.4);
+  --dash-card-bg: #1e293b;
+  --dash-card-border: #334155;
+  --dash-card-shadow: 0 1px 3px rgba(0,0,0,0.2);
+  --dash-card-shadow-hover: 0 12px 24px -8px rgba(99,102,241,0.35);
+  --dash-column-text: #94a3b8;
+  --dash-column-count-bg: #334155;
+  --dash-column-count-border: #475569;
+  --dash-empty-border: rgba(71,85,105,0.5);
+  --dash-empty-text: #64748b;
+  --dash-board-border: rgba(100,116,139,0.3);
+  --dash-card-company: #f1f5f9;
+  --dash-card-role: #94a3b8;
+  --dash-card-time: #64748b;
+  --dash-status-wishlist: #4338ca;
+  --dash-status-applied: #6366f1;
+  --dash-status-screening: #d97706;
+  --dash-status-interview: #2563eb;
+  --dash-status-offer: #16a34a;
+  --dash-status-rejected: #dc2626;
+  --dash-status-ghosted: #475569;
+  --dash-stat-streak: #34d399;
+  --dash-stat-applied: #e8ff47;
+  --dash-stat-interview: #a78bfa;
+  --dash-stat-offer: #fb923c;
+  --dash-stat-rejected: #f87171;
+  --dash-reminder-overdue: #f87171;
+  --dash-reminder-today: #fb923c;
+  --dash-reminder-upcoming: #34d399;
+  --dash-reminder-badge-bg: rgba(248,113,113,0.2);
 }
 
 @layer base {
@@ -168,20 +234,9 @@
   border-radius: 3px;
 }
 
-/* Kanban board: subtle gradient shift (disabled when prefers-reduced-motion) */
+/* Dashboard Kanban board - theme-aware, clean gradient */
 .kanban-board-bg {
-  background: linear-gradient(135deg, var(--color-purple-dark) 0%, var(--color-pink-dark) 50%, var(--color-purple) 100%);
-  background-size: 200% 200%;
-  animation: kanban-gradient-shift 12s ease-in-out infinite;
-}
-@media (prefers-reduced-motion: reduce) {
-  .kanban-board-bg {
-    animation: none;
-  }
-}
-@keyframes kanban-gradient-shift {
-  0%, 100% { background-position: 0% 0%; }
-  50% { background-position: 100% 100%; }
+  background: var(--dash-board-bg);
 }
 
 /* Jobs tab: soft modern theme (light pastel blue, off-white cards) */

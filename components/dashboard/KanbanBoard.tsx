@@ -29,14 +29,14 @@ import {
   type AppStatus,
 } from "@/types";
 
-const STATUS_ACCENT: Record<AppStatus, string> = {
-  WISHLIST: "#dee2ff",
-  APPLIED: "#cbc0d3",
-  SCREENING: "#efd3d7",
-  INTERVIEW: "#8e9aaf",
-  OFFER: "#7b8fd4",
-  REJECTED: "#c9a0a5",
-  GHOSTED: "#e8e2ed",
+const STATUS_ACCENT_VAR: Record<AppStatus, string> = {
+  WISHLIST: "var(--dash-status-wishlist)",
+  APPLIED: "var(--dash-status-applied)",
+  SCREENING: "var(--dash-status-screening)",
+  INTERVIEW: "var(--dash-status-interview)",
+  OFFER: "var(--dash-status-offer)",
+  REJECTED: "var(--dash-status-rejected)",
+  GHOSTED: "var(--dash-status-ghosted)",
 };
 
 interface AppItem {
@@ -78,7 +78,7 @@ function Column({
           : { delay: columnDelay, duration: 0.35, ease: "easeOut" }
       }
       className={`flex min-h-[120px] min-w-[132px] flex-1 flex-col sm:min-w-[140px] ${
-        !isLast ? "border-r border-[rgba(203,192,211,0.2)]" : ""
+        !isLast ? "border-r border-[var(--dash-empty-border)]" : ""
       }`}
     >
       <div
@@ -86,31 +86,37 @@ function Column({
         style={{ fontFamily: "'DM Sans', sans-serif" }}
       >
         <span
-          className="truncate text-[11px] font-medium uppercase tracking-[0.1em] text-[#8e9aaf]"
-          style={{ fontFamily: "'DM Sans', sans-serif" }}
+          className="truncate text-[11px] font-medium uppercase tracking-[0.1em]"
+          style={{ color: "var(--dash-column-text)", fontFamily: "'DM Sans', sans-serif" }}
         >
           {STATUS_LABELS[status]}
         </span>
         <motion.span
           key={items.length}
-          initial={reducedMotion ? false : { scale: 1.3, color: "#cbc0d3" }}
-          animate={{ scale: 1, color: "#8e9aaf" }}
+          initial={reducedMotion ? false : { scale: 1.3 }}
+          animate={{ scale: 1 }}
           transition={
             reducedMotion
               ? { duration: 0.1 }
               : { duration: 0.3, ease: "easeOut" }
           }
-          className="shrink-0 rounded-[20px] border border-[#e8e2ed] bg-white px-2 py-0.5 text-[11px] font-medium"
-          style={{ fontFamily: "'DM Sans', sans-serif" }}
+          className="shrink-0 rounded-full px-2.5 py-0.5 text-[11px] font-medium"
+          style={{
+            backgroundColor: "var(--dash-column-count-bg)",
+            borderColor: "var(--dash-column-count-border)",
+            color: "var(--dash-column-text)",
+            fontFamily: "'DM Sans', sans-serif",
+            border: "1px solid",
+          }}
         >
           {items.length}
         </motion.span>
       </div>
       <motion.div
         layout
-        className="scroll-thin-y min-h-0 max-h-[calc(100vh-320px)] flex-1 space-y-1.5 overflow-y-auto overflow-x-hidden rounded-[10px] px-2 py-3 sm:max-h-[calc(100vh-360px)] sm:space-y-2"
+        className="scroll-thin-y min-h-0 max-h-[calc(100vh-320px)] flex-1 space-y-1.5 overflow-y-auto overflow-x-hidden rounded-xl px-2 py-3 sm:max-h-[calc(100vh-360px)] sm:space-y-2"
         style={{
-          background: "rgba(255,255,255,0.3)",
+          background: "var(--dash-column-bg)",
           padding: "12px 8px",
         }}
       >
@@ -120,9 +126,11 @@ function Column({
         >
           {items.length === 0 ? (
             <motion.div
-              className="flex min-h-[120px] items-center justify-center rounded-[10px] border border-dashed border-[#e8e2ed] text-[11px] text-[#8e9aaf]"
+              className="flex min-h-[120px] items-center justify-center rounded-xl border border-dashed text-[11px]"
               style={{
-                background: "rgba(255,255,255,0.15)",
+                background: "var(--dash-column-empty)",
+                borderColor: "var(--dash-empty-border)",
+                color: "var(--dash-empty-text)",
                 fontFamily: "'DM Sans', sans-serif",
               }}
               animate={{
@@ -276,8 +284,8 @@ export default function KanbanBoard({ applications }: { applications: AppItem[] 
       onDragEnd={handleDragEnd}
     >
       <motion.div
-        className="rounded-2xl p-6 kanban-board-bg"
-        style={{ boxShadow: "inset 0 1px 0 rgba(255,255,255,0.05)" }}
+        className="rounded-2xl p-6 kanban-board-bg border shadow-lg"
+      style={{ borderColor: "var(--dash-board-border)" }}
         initial={reducedMotion ? false : { opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={
@@ -303,27 +311,30 @@ export default function KanbanBoard({ applications }: { applications: AppItem[] 
       <DragOverlay>
         {activeItem ? (
           <motion.div
-            className="relative w-40 cursor-grabbing rounded-xl border border-[#e8e2ed] bg-white p-4 sm:w-52"
+            className="relative w-40 cursor-grabbing rounded-xl border p-4 sm:w-52"
             style={{
-              borderTop: `2px solid ${STATUS_ACCENT[activeItem.status as AppStatus]}`,
+              backgroundColor: "var(--dash-card-bg)",
+              borderColor: "var(--dash-card-border)",
+              borderTopWidth: "3px",
+              borderTopColor: STATUS_ACCENT_VAR[activeItem.status as AppStatus],
             }}
             initial={false}
             animate={{
               scale: reducedMotion ? 1 : 1.04,
               rotate: reducedMotion ? 0 : 1.5,
-              boxShadow: "0 20px 48px rgba(203,192,211,0.45)",
+              boxShadow: "var(--dash-card-shadow-hover)",
             }}
             transition={{ duration: 0.15 }}
           >
             <p
-              className="truncate text-[15px] italic text-[#2d2535]"
-              style={{ fontFamily: "'Instrument Serif', serif" }}
+              className="truncate text-[15px] italic"
+              style={{ color: "var(--dash-card-company)", fontFamily: "'Instrument Serif', serif" }}
             >
               {activeItem.company}
             </p>
             <p
-              className="truncate text-[13px] font-light text-[#8e9aaf]"
-              style={{ fontFamily: "'DM Sans', sans-serif" }}
+              className="truncate text-[13px] font-light"
+              style={{ color: "var(--dash-card-role)", fontFamily: "'DM Sans', sans-serif" }}
             >
               {activeItem.role}
             </p>

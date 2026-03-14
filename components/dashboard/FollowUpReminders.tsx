@@ -19,13 +19,19 @@ export default function FollowUpReminders({ reminders }: { reminders: Reminder[]
   const tomorrow = today + 86400000;
 
   return (
-    <div className="mb-4 border border-edge bg-surface p-3 sm:mb-6 sm:p-4">
+    <div
+      className="mb-4 rounded-xl border p-3 sm:mb-6 sm:p-4"
+      style={{ backgroundColor: "var(--dash-card-bg)", borderColor: "var(--dash-card-border)" }}
+    >
       <div className="mb-2 flex items-center gap-2 sm:mb-3">
-        <AlertCircle className="h-3.5 w-3.5 text-[#f87171]" />
-        <h2 className="text-[11px] font-medium uppercase tracking-widest text-t-primary">
+        <AlertCircle className="h-3.5 w-3.5" style={{ color: "var(--dash-reminder-overdue)" }} />
+        <h2 className="text-[11px] font-semibold uppercase tracking-widest" style={{ color: "var(--dash-card-company)" }}>
           Due for Follow-up
         </h2>
-        <span className="bg-[#f8717130] px-1.5 py-0.5 text-[10px] font-medium text-[#f87171]">
+        <span
+          className="rounded-md px-1.5 py-0.5 text-[10px] font-medium"
+          style={{ backgroundColor: "var(--dash-reminder-badge-bg)", color: "var(--dash-reminder-overdue)" }}
+        >
           {reminders.length}
         </span>
       </div>
@@ -35,22 +41,22 @@ export default function FollowUpReminders({ reminders }: { reminders: Reminder[]
           const dueDate = new Date(y, m - 1, d);
           dueDate.setHours(0, 0, 0, 0);
           const due = dueDate.getTime();
-          let color = "#e8ff47";
+          let colorVar = "--dash-reminder-upcoming";
           let label = "Tomorrow";
 
           if (due < today) {
             const overdue = Math.ceil((today - due) / 86400000);
-            color = "#f87171";
+            colorVar = "--dash-reminder-overdue";
             label = `${overdue}d overdue`;
           } else if (due === today) {
-            color = "#fb923c";
+            colorVar = "--dash-reminder-today";
             label = "Today";
           } else if (due === tomorrow) {
-            color = "#e8ff47";
+            colorVar = "--dash-reminder-upcoming";
             label = "Tomorrow";
           } else {
             const days = Math.ceil((due - today) / 86400000);
-            color = "#e8ff47";
+            colorVar = "--dash-reminder-upcoming";
             label = `In ${days}d`;
           }
 
@@ -58,13 +64,14 @@ export default function FollowUpReminders({ reminders }: { reminders: Reminder[]
             <Link
               key={r.id}
               href={`/applications/${r.id}`}
-              className="flex items-center justify-between gap-3 px-2 py-1.5 transition-theme hover:bg-bg"
+              className="flex items-center justify-between gap-3 rounded-lg px-2 py-1.5 transition-theme hover:opacity-80"
+              style={{ outline: "none" }}
             >
               <div className="min-w-0">
-                <span className="text-[13px] font-medium text-t-primary">{r.company}</span>
-                <span className="ml-2 text-[12px] font-light text-[#777]">{r.role}</span>
+                <span className="text-[13px] font-medium" style={{ color: "var(--dash-card-company)" }}>{r.company}</span>
+                <span className="ml-2 text-[12px] font-light" style={{ color: "var(--dash-card-role)" }}>{r.role}</span>
               </div>
-              <span className="shrink-0 text-[11px] font-medium" style={{ color }}>
+              <span className="shrink-0 text-[11px] font-medium" style={{ color: `var(${colorVar})` }}>
                 {label}
               </span>
             </Link>

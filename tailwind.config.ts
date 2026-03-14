@@ -9,6 +9,13 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
+        prep: {
+          bg: "#F8FAFC",
+          primary: "#6366F1",
+          accent: "#22C55E",
+          text: "#1E293B",
+          "text-secondary": "#64748B",
+        },
         "jobs-bg": "var(--jobs-bg)",
         "jobs-card": "var(--jobs-card)",
         "jobs-text": "var(--jobs-text)",
