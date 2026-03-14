@@ -183,3 +183,25 @@
   0%, 100% { background-position: 0% 0%; }
   50% { background-position: 100% 100%; }
 }
+
+/* Jobs tab: soft modern theme (light pastel blue, off-white cards) */
+.jobs-tab {
+  --jobs-bg: #dceef4;
+  --jobs-card: #faf8f5;
+  --jobs-text: #2d3748;
+  --jobs-text-muted: #5a6578;
+  --jobs-text-faint: #8b95a5;
+  --jobs-edge: #c5dce5;
+  --jobs-accent: #0d9488;
+  --jobs-accent-hover: #0f766e;
+}
+[data-theme="dark"] .jobs-tab {
+  --jobs-bg: #0f1a20;
+  --jobs-card: #1a252d;
+  --jobs-text: #e8edf2;
+  --jobs-text-muted: #94a3b3;
+  --jobs-text-faint: #64748b;
+  --jobs-edge: #2d3d4a;
+  --jobs-accent: #2dd4bf;
+  --jobs-accent-hover: #5eead4;
+}

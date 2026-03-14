@@ -3,7 +3,7 @@
 import { Suspense, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { LayoutDashboard, Table2, BarChart3, Activity, Calendar } from "lucide-react";
+import { LayoutDashboard, Table2, BarChart3, Activity, Calendar, Briefcase } from "lucide-react";
 import AuthButton from "@/components/layout/AuthButton";
 import ThemeToggle from "@/components/layout/ThemeToggle";
 import AddButton from "@/components/applications/AddButton";
@@ -27,6 +27,7 @@ function RefreshOnTabFocus() {
 const NAV_ITEMS = [
   { href: "/dashboard", label: "Board", icon: LayoutDashboard },
   { href: "/applications", label: "Table", icon: Table2 },
+  { href: "/jobs", label: "Jobs", icon: Briefcase },
   { href: "/calendar", label: "Calendar", icon: Calendar },
   { href: "/stats", label: "Stats", icon: BarChart3 },
   { href: "/activity", label: "Activity", icon: Activity },

@@ -9,6 +9,14 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
+        "jobs-bg": "var(--jobs-bg)",
+        "jobs-card": "var(--jobs-card)",
+        "jobs-text": "var(--jobs-text)",
+        "jobs-muted": "var(--jobs-text-muted)",
+        "jobs-faint": "var(--jobs-text-faint)",
+        "jobs-edge": "var(--jobs-edge)",
+        "jobs-accent": "var(--jobs-accent)",
+        "jobs-accent-hover": "var(--jobs-accent-hover)",
         bg: "var(--color-bg)",
         surface: "var(--color-surface)",
         edge: "var(--color-edge)",
