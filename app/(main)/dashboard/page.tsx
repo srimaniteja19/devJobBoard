@@ -1,7 +1,8 @@
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/session";
-import { getUserApplications, getApplicationStats, getFollowUpReminders, getApplicationStreak } from "@/lib/applications";
+import { getUserApplications, getApplicationStats, getFollowUpReminders, getApplicationStreak, getActivityByPeriod } from "@/lib/applications";
 import StatsBar from "@/components/dashboard/StatsBar";
+import ActivityByPeriod from "@/components/dashboard/ActivityByPeriod";
 import KanbanBoard from "@/components/dashboard/KanbanBoard";
 import FollowUpReminders from "@/components/dashboard/FollowUpReminders";
 import AddButton from "@/components/applications/AddButton";
@@ -10,11 +11,12 @@ export default async function DashboardPage() {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
 
-  const [applications, stats, followUps, streak] = await Promise.all([
+  const [applications, stats, followUps, streak, activityByPeriod] = await Promise.all([
     getUserApplications(user.id),
     getApplicationStats(user.id),
     getFollowUpReminders(user.id),
     getApplicationStreak(user.id),
+    getActivityByPeriod(user.id),
   ]);
 
   const serialized = applications.map((a) => ({
@@ -67,6 +69,8 @@ export default async function DashboardPage() {
         rejectionRate={stats.rejectionRate}
         streak={streak}
       />
+
+      <ActivityByPeriod data={activityByPeriod} />
 
       <div className="mt-4 sm:mt-6">
         <FollowUpReminders reminders={reminders} />

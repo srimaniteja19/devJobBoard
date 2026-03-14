@@ -45,6 +45,40 @@ export async function getPrepsForStage(
   return result;
 }
 
+/** Counts per status for today, this week, this month. Uses appliedAt/createdAt for APPLIED, updatedAt for others. */
+export async function getActivityByPeriod(userId: string) {
+  const apps = await prisma.application.findMany({
+    where: { userId },
+    select: { status: true, appliedAt: true, createdAt: true, updatedAt: true },
+  });
+
+  const now = new Date();
+  const todayStart = new Date(now);
+  todayStart.setHours(0, 0, 0, 0);
+  const weekStart = new Date(todayStart);
+  weekStart.setDate(weekStart.getDate() - weekStart.getDay());
+  const monthStart = new Date(todayStart);
+  monthStart.setDate(1);
+
+  const addTo = (
+    acc: Record<string, { today: number; week: number; month: number }>,
+    status: string,
+    date: Date
+  ) => {
+    if (!acc[status]) acc[status] = { today: 0, week: 0, month: 0 };
+    if (date >= todayStart) acc[status].today++;
+    if (date >= weekStart) acc[status].week++;
+    if (date >= monthStart) acc[status].month++;
+  };
+
+  const result: Record<string, { today: number; week: number; month: number }> = {};
+  for (const a of apps) {
+    const date = a.status === "APPLIED" ? (a.appliedAt ?? a.createdAt) : a.updatedAt;
+    addTo(result, a.status, date);
+  }
+  return result;
+}
+
 export async function getApplicationStats(userId: string) {
   const apps = await prisma.application.findMany({
     where: { userId },
