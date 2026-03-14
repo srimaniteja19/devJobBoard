@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { authenticatedAction } from "@/lib/api-auth";
 import { fetchAllJobsBase } from "@/lib/jobs";
+import { jobSummary } from "@/lib/job-summary";
 import { fetchUserJobSourcesJobs } from "@/lib/fetch-user-jobs";
 import { filterJobs, type DateFilterKey, type ExperienceFilterKey, type WorkType } from "@/lib/job-filters";
 import type { JobListing } from "@/lib/jobs";
@@ -61,7 +62,7 @@ export async function POST(req: NextRequest) {
 
   try {
     const body = await req.json().catch(() => ({}));
-    const limit = Math.min(100, Math.max(10, Number(body.limit) || 30));
+    const limit = Math.min(2000, Math.max(10, Number(body.limit) || 2000));
     const usaOnly = body.usaOnly !== false;
     const workTypes = Array.isArray(body.workTypes)
       ? (body.workTypes.filter((w: unknown) =>
@@ -103,14 +104,43 @@ export async function POST(req: NextRequest) {
       return { job, score, matchedSkills };
     });
 
-    const filtered = scored
-      .filter((s) => s.score > 0 || keywords.length === 0)
-      .sort((a, b) => {
-        if (keywords.length === 0) {
-          return new Date(b.job.publishedAt).getTime() - new Date(a.job.publishedAt).getTime();
+    const passed = scored.filter((s) => s.score > 0 || keywords.length === 0);
+    const bySource = { greenhouse: [] as typeof passed, ashby: [] as typeof passed, lever: [] as typeof passed, custom: [] as typeof passed };
+    for (const s of passed) {
+      const src = s.job.source;
+      if (src in bySource) bySource[src as keyof typeof bySource].push(s);
+    }
+    const sortFn = (a: (typeof passed)[0], b: (typeof passed)[0]) =>
+      keywords.length === 0
+        ? new Date(b.job.publishedAt).getTime() - new Date(a.job.publishedAt).getTime()
+        : b.score - a.score;
+    for (const src of Object.keys(bySource) as (keyof typeof bySource)[]) {
+      bySource[src].sort(sortFn);
+    }
+    // Interleave by source so Ashby and Lever appear alongside Greenhouse
+    const interleaved: (typeof passed)[0][] = [];
+    const seen = new Set<(typeof passed)[0]>();
+    const sources: (keyof typeof bySource)[] = ["custom", "lever", "ashby", "greenhouse"];
+    let idx = 0;
+    while (interleaved.length < limit) {
+      let added = 0;
+      for (const src of sources) {
+        if (bySource[src][idx] && !seen.has(bySource[src][idx])) {
+          interleaved.push(bySource[src][idx]);
+          seen.add(bySource[src][idx]);
+          added++;
         }
-        return b.score - a.score;
-      })
+      }
+      if (added === 0) break;
+      idx++;
+    }
+    // Fill remaining with highest-scored not yet included
+    const remaining = passed.filter((s) => !seen.has(s)).sort(sortFn);
+    for (const s of remaining) {
+      if (interleaved.length >= limit) break;
+      interleaved.push(s);
+    }
+    const filtered = interleaved
       .slice(0, limit)
       .map(({ job, score, matchedSkills }) => ({
         ...job,
@@ -121,6 +151,7 @@ export async function POST(req: NextRequest) {
             : keywords.length > 0
               ? "Based on role"
               : "Recently posted",
+        summary: jobSummary({ title: job.title, location: job.location, description: job.description, department: job.department ?? undefined }),
       }));
 
     return NextResponse.json({

@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { formatDistanceToNowStrict } from "date-fns";
+import { formatDistanceToNowStrict, format } from "date-fns";
 import { GripVertical } from "lucide-react";
 import { motion, useReducedMotion } from "framer-motion";
 import type { AppStatus } from "@/types";
@@ -52,7 +52,15 @@ export default function KanbanCard({
   entranceDelay = 0,
 }: KanbanCardProps) {
   const [showTooltip, setShowTooltip] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const reducedMotion = useReducedMotion();
+
+  const date = appliedAt || createdAt;
+  const dateObj = new Date(date);
+  const timeAgo = mounted
+    ? formatDistanceToNowStrict(dateObj, { addSuffix: false })
+    : format(dateObj, "MMM d");
+  useEffect(() => setMounted(true), []);
   const {
     attributes,
     listeners,
@@ -67,8 +75,6 @@ export default function KanbanCard({
     transition,
   };
 
-  const date = appliedAt || createdAt;
-  const ago = formatDistanceToNowStrict(new Date(date), { addSuffix: false });
   const accentColor = STATUS_ACCENT[status];
 
   const baseTransition = reducedMotion
@@ -151,7 +157,7 @@ export default function KanbanCard({
             className="mt-0.5 text-[11px] font-light text-[#cbc0d3]"
             style={{ fontFamily: "'DM Sans', sans-serif" }}
           >
-            {ago}
+            {timeAgo}
           </p>
           {status === "WISHLIST" && resumeMatchScore != null && (
             <div

@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/session";
-import { getUserApplications, getApplicationStats, getFollowUpReminders } from "@/lib/applications";
+import { getUserApplications, getApplicationStats, getFollowUpReminders, getApplicationStreak } from "@/lib/applications";
 import StatsBar from "@/components/dashboard/StatsBar";
 import KanbanBoard from "@/components/dashboard/KanbanBoard";
 import FollowUpReminders from "@/components/dashboard/FollowUpReminders";
@@ -10,10 +10,11 @@ export default async function DashboardPage() {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
 
-  const [applications, stats, followUps] = await Promise.all([
+  const [applications, stats, followUps, streak] = await Promise.all([
     getUserApplications(user.id),
     getApplicationStats(user.id),
     getFollowUpReminders(user.id),
+    getApplicationStreak(user.id),
   ]);
 
   const serialized = applications.map((a) => ({
@@ -62,6 +63,7 @@ export default async function DashboardPage() {
         interviews={stats.interviews}
         offers={stats.offers}
         rejectionRate={stats.rejectionRate}
+        streak={streak}
       />
 
       <div className="mt-4 sm:mt-6">

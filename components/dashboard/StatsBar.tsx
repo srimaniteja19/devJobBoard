@@ -4,15 +4,19 @@ interface StatsBarProps {
   interviews: number;
   offers: number;
   rejectionRate: number;
+  streak?: number;
 }
 
-export default function StatsBar({ total, active, interviews, offers, rejectionRate }: StatsBarProps) {
+export default function StatsBar({ total, active, interviews, offers, rejectionRate, streak = 0 }: StatsBarProps) {
   const items = [
-    { label: "Applied", value: total, color: "text-accent" },
-    { label: "Active", value: active, color: "text-accent" },
-    { label: "Interviews", value: interviews, color: "text-[#a78bfa]" },
-    { label: "Offers", value: offers, color: "text-[#fb923c]" },
-    { label: "Rejected", value: `${rejectionRate}%`, color: "text-[#f87171]" },
+    ...(streak > 0
+      ? [{ label: `${streak === 1 ? "day" : "days"} streak`, value: String(streak), color: "text-emerald-600" as const }]
+      : []),
+    { label: "Applied", value: total, color: "text-accent" as const },
+    { label: "Active", value: active, color: "text-accent" as const },
+    { label: "Interviews", value: interviews, color: "text-[#a78bfa]" as const },
+    { label: "Offers", value: offers, color: "text-[#fb923c]" as const },
+    { label: "Rejected", value: `${rejectionRate}%`, color: "text-[#f87171]" as const },
   ];
 
   return (

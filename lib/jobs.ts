@@ -1,6 +1,7 @@
 import { unstable_cache } from "next/cache";
 import { fetchAllGreenhouseJobs } from "./fetch-greenhouse";
 import { fetchAllAshbyJobs } from "./fetch-ashby";
+import { fetchAllLeverJobs } from "./fetch-lever";
 
 export interface JobListing {
   id: string;
@@ -17,16 +18,17 @@ export interface JobListing {
 }
 
 async function _fetchAllJobsUncached(): Promise<JobListing[]> {
-  const [greenhouse, ashby] = await Promise.all([
+  const [greenhouse, ashby, lever] = await Promise.all([
     fetchAllGreenhouseJobs(),
     fetchAllAshbyJobs(),
+    fetchAllLeverJobs(),
   ]);
-  return [...greenhouse, ...ashby];
+  return [...greenhouse, ...ashby, ...lever];
 }
 
 /** Cached base jobs (15 min). Does not include user's custom careers pages. */
 export const fetchAllJobsBase = unstable_cache(
   _fetchAllJobsUncached,
-  ["jobs-feed-base"],
+  ["jobs-feed-base-v2"],
   { revalidate: 900 }
 );

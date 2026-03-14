@@ -65,6 +65,20 @@ model User {
   applications Application[]
   activities   ActivityLog[]
   jobSources   UserJobSource[]
+  savedJobs      SavedJob[]
+  quickApplyNotes QuickApplyNote[]
+}
+
+model QuickApplyNote {
+  id        String   @id @default(cuid())
+  userId    String
+  label     String
+  content   String
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
 
 model UserJobSource {
@@ -79,6 +93,24 @@ model UserJobSource {
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, source, boardToken])
+  @@index([userId])
+}
+
+model SavedJob {
+  id        String    @id @default(cuid())
+  userId    String
+  jobId     String    // Feed job id (e.g. gh-stripe-123)
+  jobUrl    String
+  title     String
+  company   String
+  location  String?
+  source    String
+  savedAt   DateTime  @default(now())
+  appliedAt DateTime? // When user marked as applied
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, jobId])
   @@index([userId])
 }
 

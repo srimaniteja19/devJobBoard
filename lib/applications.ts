@@ -69,6 +69,35 @@ export async function getApplicationStats(userId: string) {
   return { total, active, interviews, offers, rejections, rejectionRate, byStatus };
 }
 
+/** Application streak: consecutive days with ≥1 application (using appliedAt or createdAt). */
+export async function getApplicationStreak(userId: string): Promise<number> {
+  const apps = await prisma.application.findMany({
+    where: { userId },
+    select: { appliedAt: true, createdAt: true },
+  });
+
+  const dateSet = new Set<string>();
+  for (const a of apps) {
+    const d = a.appliedAt ?? a.createdAt;
+    if (d) dateSet.add(d.toISOString().slice(0, 10));
+  }
+  const dates = Array.from(dateSet).sort().reverse();
+  if (dates.length === 0) return 0;
+
+  const today = new Date().toISOString().slice(0, 10);
+  if (dates[0] !== today) return 0; // Streak only counts when you applied today
+
+  let streak = 1;
+  for (let i = 1; i < dates.length; i++) {
+    const prev = new Date(dates[i - 1]);
+    const curr = new Date(dates[i]);
+    const diff = (prev.getTime() - curr.getTime()) / 86400000;
+    if (Math.round(diff) === 1) streak++;
+    else break;
+  }
+  return streak;
+}
+
 export async function getWeeklyApplications(userId: string) {
   const twelveWeeksAgo = new Date();
   twelveWeeksAgo.setDate(twelveWeeksAgo.getDate() - 84);

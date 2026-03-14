@@ -1,5 +1,7 @@
 /** Fetch jobs from Lever postings API (public, no auth). */
 
+import { LEVER_BOARDS } from "./job-sources";
+
 interface LeverJob {
   id?: string;
   text?: string;
@@ -72,8 +74,18 @@ export async function fetchLeverFromBoards(
   boards: { slug: string; company: string }[]
 ): Promise<NormalizedJob[]> {
   if (boards.length === 0) return [];
-  const results = await Promise.all(
+  const results = await Promise.allSettled(
     boards.map((b) => fetchBoard(b.slug, b.company))
   );
-  return results.flat();
+  const jobs: NormalizedJob[] = [];
+  for (const r of results) {
+    if (r.status === "fulfilled" && Array.isArray(r.value)) {
+      jobs.push(...r.value);
+    }
+  }
+  return jobs;
+}
+
+export async function fetchAllLeverJobs(): Promise<NormalizedJob[]> {
+  return fetchLeverFromBoards(LEVER_BOARDS);
 }

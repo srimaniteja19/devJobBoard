@@ -44,6 +44,14 @@ export async function POST(req: NextRequest) {
 
   const { stack, appliedAt, ...data } = parsed.data;
 
+  // Avoid duplicate when same job URL already tracked
+  if (data.jobUrl) {
+    const existing = await prisma.application.findFirst({
+      where: { userId: user.id, jobUrl: data.jobUrl },
+    });
+    if (existing) return NextResponse.json({ id: existing.id }, { status: 201 });
+  }
+
   const app = await prisma.application.create({
     data: {
       ...data,
