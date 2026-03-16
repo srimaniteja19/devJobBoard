@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { authenticatedAction } from "@/lib/api-auth";
 import { applicationSchema } from "@/lib/validations/application";
 import { logActivity } from "@/lib/activity";
+import { recordStatusHistory } from "@/lib/applications";
 
 export async function GET(
   _req: NextRequest,
@@ -78,7 +79,10 @@ export async function PATCH(
   });
 
   if (body.status !== undefined && body.status !== existing.status) {
-    await logActivity(user.id, params.id, `Status changed to ${body.status}`);
+    await Promise.all([
+      logActivity(user.id, params.id, `Status changed to ${body.status}`),
+      recordStatusHistory(params.id, existing.status, body.status),
+    ]);
   }
   if (body.notes !== undefined && body.notes !== existing.notes) {
     await logActivity(user.id, params.id, "Note updated");

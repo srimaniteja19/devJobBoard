@@ -43,6 +43,9 @@ export default async function StatsPage() {
         bestDayData={advanced.bestDayData}
         resumeBreakdown={advanced.resumeBreakdown}
         dailyActivity={advanced.dailyActivity}
+        flows={advanced.flows}
+        rejectionAfterScreeningRate={advanced.rejectionAfterScreeningRate}
+        rejectionAfterInterviewRate={advanced.rejectionAfterInterviewRate}
       />
     </div>
   );

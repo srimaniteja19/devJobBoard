@@ -1,6 +1,21 @@
 import { prisma } from "@/lib/db";
 import { EVENT_LABELS, type AppStatus } from "@/types";
 
+export async function recordStatusHistory(
+  applicationId: string,
+  fromStatus: string | null,
+  toStatus: string
+) {
+  if (!toStatus || fromStatus === toStatus) return;
+  await prisma.applicationStatusHistory.create({
+    data: {
+      applicationId,
+      fromStatus: fromStatus || null,
+      toStatus,
+    },
+  });
+}
+
 export async function getUserApplications(userId: string) {
   return prisma.application.findMany({
     where: { userId },
@@ -277,6 +292,100 @@ export async function getAdvancedStats(userId: string) {
     }))
     .sort((a, b) => b.total - a.total);
 
+  // Status flow paths based on history
+  const history = await prisma.applicationStatusHistory.findMany({
+    where: { application: { userId } },
+    select: {
+      applicationId: true,
+      fromStatus: true,
+      toStatus: true,
+      changedAt: true,
+      application: {
+        select: {
+          company: true,
+          role: true,
+          id: true,
+        },
+      },
+    },
+    orderBy: { changedAt: "asc" },
+  });
+
+  type PathInfo = {
+    path: string[];
+    appId: string;
+    company: string;
+    role: string;
+  };
+
+  const pathsByApp = new Map<string, PathInfo>();
+  for (const h of history) {
+    const existing = pathsByApp.get(h.applicationId);
+    const baseStatus = h.fromStatus ?? h.toStatus;
+    if (!existing) {
+      const initial: string[] = baseStatus ? [baseStatus] : [];
+      const path =
+        initial.length && initial[0] !== h.toStatus ? [...initial, h.toStatus] : [h.toStatus];
+      pathsByApp.set(h.applicationId, {
+        path,
+        appId: h.application.id,
+        company: h.application.company,
+        role: h.application.role,
+      });
+      continue;
+    }
+    const arr = existing.path;
+    if (arr[arr.length - 1] !== h.toStatus) {
+      arr.push(h.toStatus);
+    }
+  }
+
+  const flowCounts: Record<string, number> = {};
+  const flowApps: Record<
+    string,
+    { id: string; company: string; role: string }[]
+  > = {};
+  let rejectedAfterScreening = 0;
+  let rejectedAfterInterview = 0;
+  let screenedTotal = 0;
+  let interviewedTotal = 0;
+
+  for (const [, info] of pathsByApp) {
+    const { path, appId, company, role } = info;
+    const key = path.join(" → ");
+    flowCounts[key] = (flowCounts[key] || 0) + 1;
+    if (!flowApps[key]) flowApps[key] = [];
+    flowApps[key].push({ id: appId, company, role });
+
+    if (path.includes("SCREENING")) screenedTotal++;
+    if (path.includes("INTERVIEW")) interviewedTotal++;
+
+    if (path.includes("REJECTED")) {
+      const rejectedIndex = path.indexOf("REJECTED");
+      if (rejectedIndex > -1) {
+        if (path.slice(0, rejectedIndex).includes("INTERVIEW")) {
+          rejectedAfterInterview++;
+        } else if (path.slice(0, rejectedIndex).includes("SCREENING")) {
+          rejectedAfterScreening++;
+        }
+      }
+    }
+  }
+
+  const flows = Object.entries(flowCounts)
+    .map(([flow, count]) => ({
+      flow,
+      count,
+      applications: flowApps[flow]?.slice(0, 10) ?? [],
+    }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 20);
+
+  const rejectionAfterScreeningRate =
+    screenedTotal > 0 ? Math.round((rejectedAfterScreening / screenedTotal) * 100) : 0;
+  const rejectionAfterInterviewRate =
+    interviewedTotal > 0 ? Math.round((rejectedAfterInterview / interviewedTotal) * 100) : 0;
+
   // Daily activity for heatmap
   const dailyActivity: Record<string, number> = {};
   for (const a of apps) {
@@ -295,6 +404,9 @@ export async function getAdvancedStats(userId: string) {
     bestDayData,
     resumeBreakdown,
     dailyActivity,
+    flows,
+    rejectionAfterScreeningRate,
+    rejectionAfterInterviewRate,
   };
 }
 

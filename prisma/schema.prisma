@@ -145,6 +145,7 @@ model Application {
   resumeMatch       ResumeMatch?
   generatedResumes  GeneratedResume[]
   chatMessages      ChatMessage[]
+  statusHistory     ApplicationStatusHistory[]
 
   @@index([userId])
   @@index([status])
@@ -246,4 +247,17 @@ model ChatMessage {
 
   @@index([applicationId])
   @@index([applicationId, createdAt])
+}
+
+model ApplicationStatusHistory {
+  id            String   @id @default(cuid())
+  applicationId String
+  fromStatus    String?
+  toStatus      String
+  changedAt     DateTime @default(now())
+
+  application Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+
+  @@index([applicationId])
+  @@index([applicationId, changedAt])
 }

@@ -40,6 +40,9 @@ interface StatsChartsProps {
   bestDayData: { day: string; applied: number; responses: number; rate: number }[];
   resumeBreakdown: { label: string; total: number; responses: number; rate: number }[];
   dailyActivity: Record<string, number>;
+  flows: { flow: string; count: number; applications: { id: string; company: string; role: string }[] }[];
+  rejectionAfterScreeningRate: number;
+  rejectionAfterInterviewRate: number;
 }
 
 export default function StatsCharts({
@@ -54,6 +57,9 @@ export default function StatsCharts({
   bestDayData,
   resumeBreakdown,
   dailyActivity,
+  flows,
+  rejectionAfterScreeningRate,
+  rejectionAfterInterviewRate,
 }: StatsChartsProps) {
   const pieData = Object.entries(byStatus).map(([status, count]) => ({
     name: STATUS_LABELS[status as AppStatus] ?? status,
@@ -74,14 +80,56 @@ export default function StatsCharts({
   return (
     <div className="space-y-4 sm:space-y-6">
       {/* Rate cards */}
-      <div className="grid grid-cols-1 gap-2 sm:grid-cols-3 sm:gap-4">
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-4 sm:gap-4">
         <RateCard label="Response Rate" subtitle="Applied → Screening" value={`${responseRate}%`} />
         <RateCard label="Interview Conversion" subtitle="Applied → Interview" value={`${interviewConversion}%`} />
         <RateCard label="Avg Days to Response" subtitle="Applied → first update" value={`${avgDaysToResponse}d`} />
+        <RateCard
+          label="Rejection After Interview"
+          subtitle="Of interviewed applications"
+          value={`${rejectionAfterInterviewRate}%`}
+        />
       </div>
 
-      {/* Sankey pipeline — where you're losing candidates */}
-      <SankeyPipeline funnel={funnel} />
+      {/* Sankey pipeline and flow paths */}
+      <div className="grid gap-4 sm:gap-6 lg:grid-cols-2">
+        <div>
+          <SankeyPipeline funnel={funnel} />
+        </div>
+        {flows.length > 0 && (
+          <div className="border border-edge bg-surface p-4 sm:p-5">
+            <h3 className="mb-3 text-[11px] font-medium uppercase tracking-widest text-t-muted sm:mb-4">
+              Common Application Flows
+            </h3>
+            <div className="space-y-3 text-[11px] sm:text-[12px]">
+              {flows.map((f) => (
+                <div key={f.flow} className="space-y-1.5">
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="truncate text-t-primary">{f.flow}</span>
+                    <span className="shrink-0 rounded-full bg-surface-alt px-2 py-0.5 text-[10px] text-t-muted">
+                      {f.count}
+                    </span>
+                  </div>
+                  {f.applications.length > 0 && (
+                    <ul className="space-y-0.5 text-[10px] text-t-muted">
+                      {f.applications.slice(0, 3).map((app) => (
+                        <li key={app.id} className="truncate">
+                          {app.company} — {app.role}
+                        </li>
+                      ))}
+                      {f.applications.length > 3 && (
+                        <li className="truncate text-t-faint">
+                          +{f.applications.length - 3} more in this flow
+                        </li>
+                      )}
+                    </ul>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
 
       {/* Applications over time — area chart */}
       <div className="grid gap-4 sm:gap-6 lg:grid-cols-2">
