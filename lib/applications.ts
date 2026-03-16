@@ -341,16 +341,13 @@ export async function getAdvancedStats(userId: string) {
   }
 
   const flowCounts: Record<string, number> = {};
-  const flowApps: Record<
-    string,
-    { id: string; company: string; role: string }[]
-  > = {};
+  const flowApps: Record<string, { id: string; company: string; role: string }[]> = {};
   let rejectedAfterScreening = 0;
   let rejectedAfterInterview = 0;
   let screenedTotal = 0;
   let interviewedTotal = 0;
 
-  for (const [, info] of pathsByApp) {
+  pathsByApp.forEach((info) => {
     const { path, appId, company, role } = info;
     const key = path.join(" → ");
     flowCounts[key] = (flowCounts[key] || 0) + 1;
@@ -370,7 +367,7 @@ export async function getAdvancedStats(userId: string) {
         }
       }
     }
-  }
+  });
 
   const flows = Object.entries(flowCounts)
     .map(([flow, count]) => ({
