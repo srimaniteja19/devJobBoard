@@ -2,10 +2,14 @@ import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/session";
 import { prisma } from "@/lib/db";
 import ActivityFeed from "@/components/activity/ActivityFeed";
+import DailyReportEmailSettings from "@/components/dashboard/DailyReportEmailSettings";
+import { getDailyReportEmailSettingForUser } from "@/lib/daily-report/getDailyReportEmailSetting";
 
 export default async function ActivityPage() {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
+
+  const dailyReportEmailSetting = await getDailyReportEmailSettingForUser(user.id);
 
   const activities = await prisma.activityLog.findMany({
     where: { userId: user.id },
@@ -29,6 +33,12 @@ export default async function ActivityPage() {
       <div className="mb-4 sm:mb-6">
         <h1 className="text-[22px] font-medium text-t-primary sm:text-[28px]">Activity</h1>
         <p className="text-[12px] font-light text-t-muted sm:text-[13px]">Your recent actions</p>
+      </div>
+      <div className="mb-5 sm:mb-6">
+        <DailyReportEmailSettings
+          initialEnabled={dailyReportEmailSetting.enabled}
+          initialRecipientEmails={dailyReportEmailSetting.recipientEmails}
+        />
       </div>
       <ActivityFeed activities={serialized} />
     </div>
