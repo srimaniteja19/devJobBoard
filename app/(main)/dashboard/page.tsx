@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/session";
 import { getUserApplications, getApplicationStats, getFollowUpReminders, getApplicationStreak, getActivityByPeriod } from "@/lib/applications";
 import DashboardClient from "@/components/dashboard/DashboardClient";
+import { toYMDLocal } from "@/lib/date-helpers";
 
 export default async function DashboardPage() {
   const user = await getCurrentUser();
@@ -43,7 +44,7 @@ export default async function DashboardPage() {
     id: f.id,
     company: f.company,
     role: f.role,
-    followUpDate: f.followUpDate!.toISOString().slice(0, 10),
+    followUpDate: toYMDLocal(f.followUpDate!),
   }));
 
   return (

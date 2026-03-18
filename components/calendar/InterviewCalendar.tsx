@@ -49,8 +49,10 @@ export default function InterviewCalendar({ initialItems }: Props) {
   const fetchItems = useCallback(async (start: Date, end: Date) => {
     setLoading(true);
     try {
+      const startStr = format(start, "yyyy-MM-dd");
+      const endStr = format(end, "yyyy-MM-dd");
       const res = await fetch(
-        `/api/calendar?start=${start.toISOString().slice(0, 10)}&end=${end.toISOString().slice(0, 10)}`
+        `/api/calendar?start=${startStr}&end=${endStr}`
       );
       const data = await res.json();
       if (res.ok && Array.isArray(data)) {

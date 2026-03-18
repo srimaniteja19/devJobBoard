@@ -2,11 +2,12 @@
 
 import { useState, useEffect } from "react";
 import { Sparkles, BookOpen, ExternalLink, Loader2 } from "lucide-react";
+import { toYMDLocal } from "@/lib/date-helpers";
 
 const STORAGE_KEY = "dashboard-daily-inspiration";
 
 function getDateKey() {
-  return new Date().toISOString().slice(0, 10);
+  return toYMDLocal(new Date());
 }
 
 interface InspirationData {

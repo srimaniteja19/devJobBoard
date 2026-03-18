@@ -4,6 +4,7 @@ import { authenticatedAction } from "@/lib/api-auth";
 import { applicationSchema } from "@/lib/validations/application";
 import { logActivity } from "@/lib/activity";
 import { recordStatusHistory } from "@/lib/applications";
+import { parseYMDLocal } from "@/lib/date-helpers";
 
 export async function GET(
   _req: NextRequest,
@@ -50,7 +51,7 @@ export async function PATCH(
     updateData.status = body.status;
   }
   if (body.followUpDate !== undefined) {
-    updateData.followUpDate = body.followUpDate ? new Date(body.followUpDate) : null;
+    updateData.followUpDate = body.followUpDate ? parseYMDLocal(body.followUpDate) : null;
   }
   if (body.company !== undefined) updateData.company = body.company;
   if (body.role !== undefined) updateData.role = body.role;
@@ -70,7 +71,7 @@ export async function PATCH(
   }
   if (body.stack !== undefined) updateData.stack = JSON.stringify(body.stack);
   if (body.appliedAt !== undefined) {
-    updateData.appliedAt = body.appliedAt ? new Date(body.appliedAt) : null;
+    updateData.appliedAt = body.appliedAt ? parseYMDLocal(body.appliedAt) : null;
   }
 
   const updated = await prisma.application.update({

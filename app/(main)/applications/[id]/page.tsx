@@ -23,6 +23,7 @@ import {
   type LocationType,
 } from "@/types";
 import { parseStack, getTagColor } from "@/lib/utils";
+import { toYMDLocal } from "@/lib/date-helpers";
 import StatusSelect from "@/components/applications/StatusSelect";
 import AddEventForm from "@/components/applications/AddEventForm";
 import AddContactForm from "@/components/applications/AddContactForm";
@@ -105,7 +106,7 @@ export default async function ApplicationDetailPage({ params }: PageProps) {
         <div className="mt-2 sm:mt-3">
           <FollowUpPicker
             applicationId={app.id}
-            currentDate={app.followUpDate ? app.followUpDate.toISOString().slice(0, 10) : null}
+            currentDate={app.followUpDate ? toYMDLocal(app.followUpDate) : null}
           />
         </div>
 

@@ -1,5 +1,16 @@
 import { prisma } from "@/lib/db";
 import { EVENT_LABELS, type AppStatus } from "@/types";
+import { endOfLocalDay, parseYMDLocal, startOfLocalDay, toYMDLocal } from "@/lib/date-helpers";
+
+function diffDaysLocal(from: Date, to: Date): number {
+  // Convert local calendar dates to UTC-only midnights so day differences
+  // aren't affected by local DST transitions.
+  const [fy, fm, fd] = toYMDLocal(from).split("-").map(Number);
+  const [ty, tm, td] = toYMDLocal(to).split("-").map(Number);
+  const fromUTC = Date.UTC(fy, fm - 1, fd);
+  const toUTC = Date.UTC(ty, tm - 1, td);
+  return (toUTC - fromUTC) / 86400000;
+}
 
 export async function recordStatusHistory(
   applicationId: string,
@@ -128,20 +139,23 @@ export async function getApplicationStreak(userId: string): Promise<number> {
   const dateSet = new Set<string>();
   for (const a of apps) {
     const d = a.appliedAt ?? a.createdAt;
-    if (d) dateSet.add(d.toISOString().slice(0, 10));
+    if (d) dateSet.add(toYMDLocal(d));
   }
   const dates = Array.from(dateSet).sort().reverse();
   if (dates.length === 0) return 0;
 
-  const today = new Date().toISOString().slice(0, 10);
+  const today = toYMDLocal(new Date());
   if (dates[0] !== today) return 0; // Streak only counts when you applied today
 
   let streak = 1;
   for (let i = 1; i < dates.length; i++) {
-    const prev = new Date(dates[i - 1]);
-    const curr = new Date(dates[i]);
-    const diff = (prev.getTime() - curr.getTime()) / 86400000;
-    if (Math.round(diff) === 1) streak++;
+    const prevYMD = dates[i - 1];
+    const currYMD = dates[i];
+    const prevDate = parseYMDLocal(prevYMD);
+    // `dates` is newest -> oldest, so consecutive means "curr is 1 day before prev".
+    const expectedCurr = new Date(prevDate);
+    expectedCurr.setDate(expectedCurr.getDate() - 1);
+    if (toYMDLocal(expectedCurr) === currYMD) streak++;
     else break;
   }
   return streak;
@@ -165,7 +179,7 @@ export async function getWeeklyApplications(userId: string) {
     const d = app.createdAt;
     const weekStart = new Date(d);
     weekStart.setDate(weekStart.getDate() - weekStart.getDay());
-    const key = weekStart.toISOString().slice(0, 10);
+    const key = toYMDLocal(weekStart);
     weeks[key] = (weeks[key] || 0) + 1;
   }
 
@@ -202,7 +216,7 @@ export async function getAdvancedStats(userId: string) {
   const responseDays: number[] = [];
   for (const a of screened) {
     const from = a.appliedAt ?? a.createdAt;
-    const diff = (a.updatedAt.getTime() - from.getTime()) / (1000 * 60 * 60 * 24);
+    const diff = diffDaysLocal(from, a.updatedAt);
     if (diff >= 0) responseDays.push(Math.round(diff));
   }
   const avgDaysToResponse =
@@ -386,7 +400,7 @@ export async function getAdvancedStats(userId: string) {
   // Daily activity for heatmap
   const dailyActivity: Record<string, number> = {};
   for (const a of apps) {
-    const key = a.createdAt.toISOString().slice(0, 10);
+    const key = toYMDLocal(a.createdAt);
     dailyActivity[key] = (dailyActivity[key] || 0) + 1;
   }
 
@@ -445,6 +459,8 @@ export interface CalendarItem {
   id: string;
   type: "follow_up" | "event";
   date: string; // YYYY-MM-DD
+  startAt?: string; // ISO string (UTC) - used by calendar/ICS export
+  endAt?: string; // ISO string (UTC) - used by calendar/ICS export
   title: string;
   subtitle?: string;
   applicationId: string;
@@ -457,10 +473,8 @@ export async function getCalendarItems(
   startDate: Date,
   endDate: Date
 ): Promise<CalendarItem[]> {
-  const start = new Date(startDate);
-  start.setHours(0, 0, 0, 0);
-  const end = new Date(endDate);
-  end.setHours(23, 59, 59, 999);
+  const start = startOfLocalDay(startDate);
+  const end = endOfLocalDay(endDate);
 
   const [appsWithFollowUp, events] = await Promise.all([
     prisma.application.findMany({
@@ -494,11 +508,29 @@ export async function getCalendarItems(
     items.push({
       id: `follow-${app.id}`,
       type: "follow_up",
-      date: app.followUpDate.toISOString().slice(0, 10),
+      date: toYMDLocal(app.followUpDate),
       title: `Follow up: ${app.company}`,
       subtitle: app.role,
       applicationId: app.id,
       status: app.status,
+      startAt: new Date(
+        app.followUpDate.getFullYear(),
+        app.followUpDate.getMonth(),
+        app.followUpDate.getDate(),
+        9,
+        0,
+        0,
+        0
+      ).toISOString(),
+      endAt: new Date(
+        app.followUpDate.getFullYear(),
+        app.followUpDate.getMonth(),
+        app.followUpDate.getDate(),
+        10,
+        0,
+        0,
+        0
+      ).toISOString(),
     });
   }
 
@@ -510,12 +542,15 @@ export async function getCalendarItems(
     items.push({
       id: event.id,
       type: "event",
-      date: event.scheduledAt.toISOString().slice(0, 10),
+      date: toYMDLocal(event.scheduledAt),
       title: `${eventLabel}: ${app.company}`,
       subtitle: app.role,
       applicationId: app.id,
       status: app.status,
       eventType: event.type,
+      startAt: event.scheduledAt.toISOString(),
+      // Default duration: 1 hour
+      endAt: new Date(event.scheduledAt.getTime() + 60 * 60 * 1000).toISOString(),
     });
   }
 

@@ -9,6 +9,7 @@ import { applicationSchema, type ApplicationFormData } from "@/lib/validations/a
 import { LOCATION_LABELS, STATUS_LABELS, KANBAN_COLUMNS, type LocationType, type AppStatus } from "@/types";
 import StackTagInput from "@/components/ui/StackTagInput";
 import { parseStack } from "@/lib/utils";
+import { toYMDLocal } from "@/lib/date-helpers";
 
 const TYPES: LocationType[] = ["REMOTE", "HYBRID", "ONSITE"];
 
@@ -109,8 +110,8 @@ export default function EditApplicationModal({
         status,
         resumeLabel: initialData.resumeLabel ?? "",
         appliedAt: initialData.appliedAt
-          ? new Date(initialData.appliedAt).toISOString().slice(0, 10)
-          : new Date().toISOString().slice(0, 10),
+          ? toYMDLocal(initialData.appliedAt)
+          : toYMDLocal(new Date()),
         notes: initialData.notes ?? "",
       });
       setServerError("");

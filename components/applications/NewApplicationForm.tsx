@@ -8,6 +8,7 @@ import { Loader2, Send } from "lucide-react";
 import { applicationSchema, type ApplicationFormData } from "@/lib/validations/application";
 import { LOCATION_LABELS, STATUS_LABELS, KANBAN_COLUMNS, type LocationType } from "@/types";
 import StackTagInput from "@/components/ui/StackTagInput";
+import { toYMDLocal } from "@/lib/date-helpers";
 
 const LOCATION_TYPES: LocationType[] = ["REMOTE", "HYBRID", "ONSITE"];
 
@@ -31,7 +32,7 @@ export default function NewApplicationForm() {
       type: "REMOTE",
       stack: [],
       status: "APPLIED",
-      appliedAt: new Date().toISOString().slice(0, 10),
+      appliedAt: toYMDLocal(new Date()),
       notes: "",
     },
   });

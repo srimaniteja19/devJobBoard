@@ -1,5 +1,7 @@
 "use client";
 
+import { toYMDLocal } from "@/lib/date-helpers";
+
 interface Props {
   data: Record<string, number>;
 }
@@ -16,7 +18,7 @@ export default function ActivityHeatmap({ data }: Props) {
   while (current <= today) {
     const week: { date: Date; count: number }[] = [];
     for (let d = 0; d < 7; d++) {
-      const key = current.toISOString().slice(0, 10);
+      const key = toYMDLocal(current);
       week.push({ date: new Date(current), count: data[key] ?? 0 });
       current.setDate(current.getDate() + 1);
     }
@@ -77,7 +79,7 @@ export default function ActivityHeatmap({ data }: Props) {
                       key={di}
                       className="h-[11px] w-[11px] rounded-[2px]"
                       style={{ backgroundColor: getColor(day.count) }}
-                      title={`${day.date.toISOString().slice(0, 10)}: ${day.count} applications`}
+                      title={`${toYMDLocal(day.date)}: ${day.count} applications`}
                     />
                   ))}
                 </div>

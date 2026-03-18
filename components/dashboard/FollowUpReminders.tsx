@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { AlertCircle } from "lucide-react";
+import { toYMDLocal } from "@/lib/date-helpers";
 
 interface Reminder {
   id: string;
@@ -16,7 +17,9 @@ export default function FollowUpReminders({ reminders }: { reminders: Reminder[]
   const now = new Date();
   now.setHours(0, 0, 0, 0);
   const today = now.getTime();
-  const tomorrow = today + 86400000;
+  const tomorrowDate = new Date(now);
+  tomorrowDate.setDate(tomorrowDate.getDate() + 1);
+  const tomorrow = tomorrowDate.getTime();
 
   return (
     <div
@@ -45,7 +48,13 @@ export default function FollowUpReminders({ reminders }: { reminders: Reminder[]
           let label = "Tomorrow";
 
           if (due < today) {
-            const overdue = Math.ceil((today - due) / 86400000);
+            const todayYMD = toYMDLocal(now);
+            const dueYMD = toYMDLocal(dueDate);
+            const [ty, tm, td] = todayYMD.split("-").map(Number);
+            const [dy, dm, dd] = dueYMD.split("-").map(Number);
+            const overdue = Math.round(
+              (Date.UTC(ty, tm - 1, td) - Date.UTC(dy, dm - 1, dd)) / 86400000
+            );
             colorVar = "--dash-reminder-overdue";
             label = `${overdue}d overdue`;
           } else if (due === today) {
@@ -55,7 +64,13 @@ export default function FollowUpReminders({ reminders }: { reminders: Reminder[]
             colorVar = "--dash-reminder-upcoming";
             label = "Tomorrow";
           } else {
-            const days = Math.ceil((due - today) / 86400000);
+            const todayYMD = toYMDLocal(now);
+            const dueYMD = toYMDLocal(dueDate);
+            const [ty, tm, td] = todayYMD.split("-").map(Number);
+            const [dy, dm, dd] = dueYMD.split("-").map(Number);
+            const days = Math.round(
+              (Date.UTC(dy, dm - 1, dd) - Date.UTC(ty, tm - 1, td)) / 86400000
+            );
             colorVar = "--dash-reminder-upcoming";
             label = `In ${days}d`;
           }

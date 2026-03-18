@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getCalendarItems } from "@/lib/applications";
 import { authenticatedAction } from "@/lib/api-auth";
+import { isValidYMD, parseYMDLocal } from "@/lib/date-helpers";
 
 export async function GET(req: NextRequest) {
   const { user, unauthorized } = await authenticatedAction();
@@ -16,14 +17,13 @@ export async function GET(req: NextRequest) {
     );
   }
 
-  const start = new Date(startParam);
-  const end = new Date(endParam);
-
-  if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
+  if (!isValidYMD(startParam) || !isValidYMD(endParam)) {
     return NextResponse.json({ error: "Invalid date format" }, { status: 400 });
   }
 
   try {
+    const start = parseYMDLocal(startParam);
+    const end = parseYMDLocal(endParam);
     const items = await getCalendarItems(user.id, start, end);
     return NextResponse.json(items);
   } catch (e) {

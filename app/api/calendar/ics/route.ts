@@ -7,7 +7,9 @@ function escapeIcs(str: string): string {
 }
 
 function formatIcsDate(d: Date): string {
-  return d.toISOString().replace(/[-:]/g, "").slice(0, 15);
+  // RFC5545 requires either floating/local time or UTC time (ending with `Z`).
+  // We always export UTC timestamps here.
+  return d.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}Z$/, "Z");
 }
 
 export async function GET(req: NextRequest) {
@@ -32,9 +34,16 @@ export async function GET(req: NextRequest) {
     ];
 
     for (const item of items) {
-      const [y, m, d] = item.date.split("-").map(Number);
-      const startDate = new Date(y, m - 1, d, 9, 0, 0);
-      const endDate = new Date(y, m - 1, d, 10, 0, 0);
+      const startDate =
+        item.startAt !== undefined ? new Date(item.startAt) : (() => {
+          const [y, m, d] = item.date.split("-").map(Number);
+          return new Date(y, m - 1, d, 9, 0, 0, 0);
+        })();
+      const endDate =
+        item.endAt !== undefined ? new Date(item.endAt) : (() => {
+          const [y, m, d] = item.date.split("-").map(Number);
+          return new Date(y, m - 1, d, 10, 0, 0, 0);
+        })();
 
       lines.push("BEGIN:VEVENT");
       lines.push(`UID:${item.id}@jobtracker`);

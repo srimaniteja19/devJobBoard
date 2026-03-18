@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { authenticatedAction } from "@/lib/api-auth";
 import { generateJson } from "@/lib/gemini";
+import { toYMDLocal } from "@/lib/date-helpers";
 
 function parseStack(stack: string): string[] {
   try {
@@ -67,7 +68,7 @@ export async function POST() {
         location: a.location ?? a.type,
         status: a.status,
         appliedDay: dayOfWeek,
-        appliedDate: appliedDate.toISOString().slice(0, 10),
+        appliedDate: toYMDLocal(appliedDate),
       };
     });
 

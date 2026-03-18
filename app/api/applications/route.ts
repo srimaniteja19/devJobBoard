@@ -3,6 +3,7 @@ import { prisma } from "@/lib/db";
 import { authenticatedAction } from "@/lib/api-auth";
 import { applicationSchema } from "@/lib/validations/application";
 import { logActivity } from "@/lib/activity";
+import { parseYMDLocal } from "@/lib/date-helpers";
 
 export async function GET() {
   const { user, unauthorized } = await authenticatedAction();
@@ -62,7 +63,7 @@ export async function POST(req: NextRequest) {
       resumeFileUrl: data.resumeFileUrl || null,
       notes: data.notes || null,
       stack: JSON.stringify(stack),
-      appliedAt: appliedAt ? new Date(appliedAt) : new Date(),
+      appliedAt: appliedAt ? parseYMDLocal(appliedAt) : new Date(),
       userId: user.id,
     },
   });
