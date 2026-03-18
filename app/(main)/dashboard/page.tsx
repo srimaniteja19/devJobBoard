@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/session";
 import { getUserApplications, getApplicationStats, getFollowUpReminders, getApplicationStreak, getActivityByPeriod } from "@/lib/applications";
+import { getDailyReportEmailSettingForUser } from "@/lib/daily-report/getDailyReportEmailSetting";
 import DashboardClient from "@/components/dashboard/DashboardClient";
 import { toYMDLocal } from "@/lib/date-helpers";
 
@@ -8,12 +9,13 @@ export default async function DashboardPage() {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
 
-  const [applications, stats, followUps, streak, activityByPeriod] = await Promise.all([
+  const [applications, stats, followUps, streak, activityByPeriod, dailyReportEmailSetting] = await Promise.all([
     getUserApplications(user.id),
     getApplicationStats(user.id),
     getFollowUpReminders(user.id),
     getApplicationStreak(user.id),
     getActivityByPeriod(user.id),
+    getDailyReportEmailSettingForUser(user.id),
   ]);
 
   const serialized = applications.map((a) => ({
@@ -60,6 +62,7 @@ export default async function DashboardPage() {
       }}
       streak={streak}
       activityByPeriod={activityByPeriod}
+      dailyReportEmailSetting={dailyReportEmailSetting}
     />
   );
 }

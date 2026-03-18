@@ -9,6 +9,7 @@ import FollowUpReminders from "./FollowUpReminders";
 import KanbanBoard from "./KanbanBoard";
 import ActivityByPeriod from "./ActivityByPeriod";
 import AddButton from "@/components/applications/AddButton";
+import DailyReportEmailSettings from "./DailyReportEmailSettings";
 
 interface Reminder {
   id: string;
@@ -38,6 +39,7 @@ interface DashboardClientProps {
   stats: { total: number; active: number; interviews: number; offers: number; rejectionRate: number };
   streak: number;
   activityByPeriod: ActivityData;
+  dailyReportEmailSetting: { enabled: boolean; recipientEmails: string[] };
 }
 
 export default function DashboardClient({
@@ -46,6 +48,7 @@ export default function DashboardClient({
   stats,
   streak,
   activityByPeriod,
+  dailyReportEmailSetting,
 }: DashboardClientProps) {
   const [theme, setTheme] = useDashboardTheme();
   const [notes, setNotes] = useDashboardNotes();
@@ -92,7 +95,13 @@ export default function DashboardClient({
               />
             </div>
             <div className="min-w-0">
-              <DashboardNotes value={notes} onChange={setNotes} />
+              <div className="space-y-5">
+                <DashboardNotes value={notes} onChange={setNotes} />
+                <DailyReportEmailSettings
+                  initialEnabled={dailyReportEmailSetting.enabled}
+                  initialRecipientEmails={dailyReportEmailSetting.recipientEmails}
+                />
+              </div>
             </div>
           </div>
 

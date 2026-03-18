@@ -261,3 +261,29 @@ model ApplicationStatusHistory {
   @@index([applicationId])
   @@index([applicationId, changedAt])
 }
+
+// Stores who should receive the daily activity email for each user.
+model DailyReportEmailSetting {
+  id               String   @id @default(cuid())
+  userId           String   @unique
+  recipientEmails String   // comma/space/newline-separated emails
+  enabled         Boolean  @default(true)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+
+// Records delivery attempts so the scheduled job is safe to re-run.
+model DailyReportDelivery {
+  id          String   @id @default(cuid())
+  userId      String
+  reportDate  String   // YYYY-MM-DD in America/New_York (ET)
+  status      String   @default("SENT") // SENT | FAILED
+  toEmails    String?
+  error       String?
+  sentAt      DateTime?
+  createdAt   DateTime @default(now())
+
+  @@unique([userId, reportDate])
+  @@index([userId])
+  @@index([reportDate])
+}
