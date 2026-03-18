@@ -101,11 +101,33 @@ async function getDailyReportEmailDataForUser(userId: string, reportDateYMD: str
     return Object.values(byId);
   };
 
-  const appliedApps = distinctById(
-    statusHistory
-      .filter((h) => h.toStatus === "APPLIED")
-      .map((h) => ({ id: h.application.id, company: h.application.company, role: h.application.role }))
-  ).map(({ company, role }) => ({ company, role }));
+  // "Applied today" must use `Application.appliedAt` (status history can be missing
+  // for apps created via the extension).
+  const appliedApps = await prisma.application.findMany({
+    where: {
+      userId,
+      status: "APPLIED",
+      appliedAt: { gte: window.reportStart, lt: window.reportEnd },
+    },
+    select: { company: true, role: true, id: true, appliedAt: true },
+  });
+
+  const appliedDistinct = distinctById(
+    appliedApps.map((a) => ({ id: a.id, company: a.company, role: a.role, appliedAt: a.appliedAt }))
+  ).map(({ company, role, appliedAt }) => ({
+    company,
+    role,
+    appliedAtISO: appliedAt
+      ? formatInTimeZone(appliedAt, DEFAULT_REPORT_TIME_ZONE, {
+          year: "numeric",
+          month: "short",
+          day: "2-digit",
+          hour: "2-digit",
+          minute: "2-digit",
+          hour12: true,
+        })
+      : "",
+  }));
 
   const rejectedApps = distinctById(
     statusHistory
@@ -242,7 +264,7 @@ async function getDailyReportEmailDataForUser(userId: string, reportDateYMD: str
 
   const reportForCoach = {
     reportDateYMD,
-    appliedCount: appliedApps.length,
+    appliedCount: appliedDistinct.length,
     rejectedCount: rejectedApps.length,
     movedCounts: Object.fromEntries(Object.entries(moved).map(([k, v]) => [k, v.length])),
     followUpCount: followUpItems.length,
@@ -254,7 +276,7 @@ async function getDailyReportEmailDataForUser(userId: string, reportDateYMD: str
   const data: DailyReportEmailData = {
     reportDateYMD,
     generatedAtISO: new Date().toISOString(),
-    applied: appliedApps,
+    applied: appliedDistinct,
     rejected: rejectedApps,
     moved,
     followUps: followUpItems,
@@ -272,7 +294,11 @@ export async function sendDailyReportsForNow(): Promise<{ attempted: number; sen
   const now = new Date();
   const reportDateYMD = getTimeZoneDateYMD(now, reportTimeZone);
 
-  const reportStart = startOfTimeZoneDay(now, reportTimeZone);
+  // Important: your existing dashboard "today" logic effectively uses a midnight boundary
+  // in the server's timezone (which is UTC on Vercel). To keep daily email stats consistent
+  // with what you see in the app, we use UTC midnight here.
+  const reportStart = new Date(now);
+  reportStart.setUTCHours(0, 0, 0, 0);
   const reportEnd = now;
 
   // "Next window" starting immediately after the email time.

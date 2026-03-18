@@ -5,6 +5,10 @@ export type AppRef = {
   role: string;
 };
 
+export type AppliedItem = AppRef & {
+  appliedAtISO: string;
+};
+
 export type FollowUpItem = AppRef & {
   dueAtISO: string;
   status: string;
@@ -22,7 +26,7 @@ export type ScheduledEventItem = {
 export type DailyReportEmailData = {
   reportDateYMD: string; // YYYY-MM-DD in ET
   generatedAtISO: string;
-  applied: AppRef[];
+  applied: AppliedItem[];
   rejected: AppRef[];
   moved: Record<string, AppRef[]>; // stage -> apps
   followUps: FollowUpItem[];
@@ -37,97 +41,109 @@ export function renderDailyReportEmailHtml(data: DailyReportEmailData): {
   text: string;
 } {
   const movedTotal = Object.values(data.moved).reduce((acc, apps) => acc + apps.length, 0);
-  const appliedList = data.applied
-    .map((a) => `<li>${escape(a.company)} — <span style="color:#60a5fa">${escape(a.role)}</span></li>`)
-    .join("");
-  const rejectedList = data.rejected
-    .map((a) => `<li>${escape(a.company)} — <span style="color:#fb7185">${escape(a.role)}</span></li>`)
+
+  const stageColor = (stage: string) => {
+    if (stage === "SCREENING") return "#fbbf24";
+    if (stage === "INTERVIEW") return "#fb923c";
+    if (stage === "OFFER") return "#e8ff47";
+    return "#a78bfa";
+  };
+
+  const appliedRows = data.applied
+    .map(
+      (a) => `
+      <tr>
+        <td>${escape(a.company)}</td>
+        <td class="role">${escape(a.role)}</td>
+        <td class="muted">${escape(a.appliedAtISO)}</td>
+      </tr>
+    `
+    )
     .join("");
 
-  const movedSections = Object.entries(data.moved)
+  const rejectedRows = data.rejected
+    .map(
+      (a) => `
+      <tr>
+        <td>${escape(a.company)}</td>
+        <td class="role rejected-role">${escape(a.role)}</td>
+      </tr>
+    `
+    )
+    .join("");
+
+  const movedRows = Object.entries(data.moved)
     .sort(([a], [b]) => a.localeCompare(b))
-    .map(([stage, apps]) => {
-      if (!apps.length) return "";
-      const color =
-        stage === "SCREENING"
-          ? "#fbbf24"
-          : stage === "INTERVIEW"
-            ? "#fb923c"
-            : stage === "OFFER"
-              ? "#e8ff47"
-              : "#a78bfa";
-      const items = apps
-        .map(
-          (a) =>
-            `<li>${escape(a.company)} — <span style="color:${color}">${escape(a.role)}</span></li>`
-        )
-        .join("");
+    .flatMap(([stage, apps]) =>
+      apps.map(
+        (a) => `
+        <tr>
+          <td class="stage" style="color:${stageColor(stage)};">${escape(stage)}</td>
+          <td>${escape(a.company)}</td>
+          <td class="role">${escape(a.role)}</td>
+        </tr>
+      `
+      )
+    )
+    .join("");
+
+  const followUpRows = data.followUps
+    .map((f) => {
+      const prep =
+        f.prepSectionLabels.length > 0
+          ? escape(f.prepSectionLabels.slice(0, 3).join(", "))
+          : "Not generated yet";
       return `
-        <div class="card">
-          <div class="card-title">${escape(stage)}</div>
-          <ul class="list">${items}</ul>
-        </div>
+        <tr>
+          <td>${escape(f.company)}</td>
+          <td class="role">${escape(f.role)}</td>
+          <td class="muted">${escape(f.status)}</td>
+          <td class="muted">${escape(f.dueAtISO)}</td>
+          <td class="muted">${prep}</td>
+        </tr>
       `;
     })
     .join("");
 
-  const followUpsList = data.followUps.length
-    ? `<ul class="list">${data.followUps
-        .map((f) => {
-          const prep = f.prepSectionLabels.length
-            ? `<div class="muted"><b>Prep:</b> ${escape(f.prepSectionLabels.slice(0, 3).join(", "))}</div>`
-            : `<div class="muted"><b>Prep:</b> Not generated yet</div>`;
-          return `
-            <li>
-              <div><b>${escape(f.company)}</b> — <span style="color:#60a5fa">${escape(f.role)}</span></div>
-              <div class="muted">${escape(f.status)} • Due: ${escape(f.dueAtISO)}</div>
-              ${prep}
-            </li>
-          `;
-        })
-        .join("")}</ul>`
-    : `<div class="muted">No follow-up reminders due in the next window.</div>`;
-
-  const eventsList = data.scheduledEvents.length
-    ? `<ul class="list">${data.scheduledEvents
-        .map((e) => {
-          const notes = e.notes ? `<div class="muted">${escape(e.notes)}</div>` : "";
-          const prep = e.prepSectionLabels.length
-            ? `<div class="muted"><b>Prep:</b> ${escape(e.prepSectionLabels.slice(0, 3).join(", "))}</div>`
-            : `<div class="muted"><b>Prep:</b> Not generated yet</div>`;
-          return `
-            <li>
-              <div><b>${escape(e.eventLabel)}</b>: ${escape(e.company)} — <span style="color:#60a5fa">${escape(e.role)}</span></div>
-              <div class="muted">When: ${escape(e.scheduledAtISO)}</div>
-              <div class="muted">${escape(e.status)}</div>
-              ${prep}
-              ${notes}
-            </li>
-          `;
-        })
-        .join("")}</ul>`
-    : `<div class="muted">No scheduled events in the next window.</div>`;
+  const scheduledEventRows = data.scheduledEvents
+    .map((e) => {
+      const prep =
+        e.prepSectionLabels.length > 0
+          ? escape(e.prepSectionLabels.slice(0, 3).join(", "))
+          : "Not generated yet";
+      const notes = e.notes ? `<div class="notes">${escape(e.notes)}</div>` : "";
+      return `
+        <tr>
+          <td class="muted">${escape(e.eventLabel)}</td>
+          <td>${escape(e.company)}</td>
+          <td class="role">${escape(e.role)}</td>
+          <td class="muted">${escape(e.scheduledAtISO)}</td>
+          <td class="muted">${escape(e.status)}</td>
+          <td class="muted">${prep}${notes}</td>
+        </tr>
+      `;
+    })
+    .join("");
 
   const coachBlock = data.coachTitle
     ? `
-      <div class="card card-hero">
-        <div class="card-title">${escape(data.coachTitle)}</div>
-        ${
-          data.coachParagraphs?.length
-            ? `<div class="p">${data.coachParagraphs
-                .map((p) => `<p>${escape(p)}</p>`)
-                .join("")}</div>`
-            : ""
-        }
-        ${
-          data.coachBullets?.length
-            ? `<ul class="bullets">${data.coachBullets
-                .slice(0, 5)
-                .map((b) => `<li>${escape(b)}</li>`)
-                .join("")}</ul>`
-            : ""
-        }
-      </div>
+      <table class="card">
+        <tr>
+          <td class="hero">
+            <div class="hero-title">${escape(data.coachTitle)}</div>
+            ${
+              data.coachParagraphs?.length
+                ? `<div class="hero-body">${data.coachParagraphs.map((p) => `<p>${escape(p)}</p>`).join("")}</div>`
+                : ""
+            }
+            ${
+              data.coachBullets?.length
+                ? `<ul class="hero-bullets">${data.coachBullets.slice(0, 5).map((b) => `<li>${escape(b)}</li>`).join("")}</ul>`
+                : ""
+            }
+          </td>
+        </tr>
+      </table>
     `
     : "";
 
@@ -135,7 +151,7 @@ export function renderDailyReportEmailHtml(data: DailyReportEmailData): {
     `Daily Job Board Report — ${data.reportDateYMD}`,
     "",
     `Applied: ${data.applied.length}`,
-    ...data.applied.map((a) => `- ${a.company} — ${a.role}`),
+    ...data.applied.map((a) => `- ${a.company} — ${a.role} (Applied: ${a.appliedAtISO})`),
     "",
     `Rejected: ${data.rejected.length}`,
     ...data.rejected.map((a) => `- ${a.company} — ${a.role}`),
@@ -159,77 +175,161 @@ export function renderDailyReportEmailHtml(data: DailyReportEmailData): {
       <meta name="viewport" content="width=device-width, initial-scale=1"/>
       <title>Daily Job Board Report</title>
     </head>
-    <body style="margin:0;padding:0;background:#0b1220;color:#e5e7eb;font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,'Apple Color Emoji','Segoe UI Emoji';">
-      <div style="max-width:720px;margin:0 auto;padding:24px;">
-        <div style="padding:18px 20px;border-radius:14px;background:linear-gradient(135deg,#0f172a,#111827);border:1px solid rgba(255,255,255,0.08);">
-          <div style="display:flex;align-items:center;gap:12px;">
-            <div style="width:12px;height:12px;border-radius:999px;background:#34d399;box-shadow:0 0 0 4px rgba(52,211,153,0.15);"></div>
-            <div style="font-size:18px;font-weight:700;letter-spacing:-0.01em;">Daily Job Board Report</div>
+    <body style="margin:0;padding:0;background:#f6f7ff;color:#111827;font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,'Apple Color Emoji','Segoe UI Emoji';">
+      <div style="max-width:760px;margin:0 auto;padding:22px;">
+        <div class="header">
+          <div class="header-row">
+            <div class="dot"></div>
+            <div class="header-title">Daily Job Board Report</div>
           </div>
-          <div style="margin-top:8px;color:#94a3b8;font-size:13px;">
-            Date: <b style="color:#cbd5e1">${escape(data.reportDateYMD)}</b> • Generated: <span>${escape(
-              new Date(data.generatedAtISO).toISOString()
-            )}</span>
+          <div class="header-sub">
+            Date: <b>${escape(data.reportDateYMD)}</b> • Generated: <span>${escape(new Date(data.generatedAtISO).toISOString())}</span>
           </div>
         </div>
 
-        <div style="height:16px;"></div>
+        <div style="height:14px;"></div>
         ${coachBlock}
 
-        <div style="height:16px;"></div>
-        <div class="grid">
-          <div class="card">
-            <div class="card-title">Applied</div>
-            <div class="big">${data.applied.length}</div>
-            ${data.applied.length ? `<ul class="list">${appliedList}</ul>` : `<div class="muted">No new applications marked as applied.</div>`}
-          </div>
+        <div style="height:14px;"></div>
 
-          <div class="card">
-            <div class="card-title">Rejected</div>
-            <div class="big">${data.rejected.length}</div>
-            ${data.rejected.length ? `<ul class="list">${rejectedList}</ul>` : `<div class="muted">No applications marked as rejected.</div>`}
-          </div>
+        <div class="two">
+          <table class="card">
+            <tr><td class="card-title">
+              Applied <span class="count">${data.applied.length}</span>
+            </td></tr>
+            <tr>
+              <td>
+                ${
+                  data.applied.length
+                    ? `<table class="tbl">
+                        <thead>
+                          <tr><th>Company</th><th>Role</th><th>Applied</th></tr>
+                        </thead>
+                        <tbody>${appliedRows}</tbody>
+                      </table>`
+                    : `<div class="muted">No new applications marked as applied.</div>`
+                }
+              </td>
+            </tr>
+          </table>
+
+          <table class="card">
+            <tr><td class="card-title">
+              Rejected <span class="count rejected">${data.rejected.length}</span>
+            </td></tr>
+            <tr>
+              <td>
+                ${
+                  data.rejected.length
+                    ? `<table class="tbl">
+                        <thead>
+                          <tr><th>Company</th><th>Role</th></tr>
+                        </thead>
+                        <tbody>${rejectedRows}</tbody>
+                      </table>`
+                    : `<div class="muted">No applications marked as rejected.</div>`
+                }
+              </td>
+            </tr>
+          </table>
         </div>
 
-        <div style="height:16px;"></div>
-        <div class="section-title">Moved to Next Steps (${movedTotal})</div>
-        ${movedSections || `<div class="muted">No stage transitions into Screening/Interview/Offer today.</div>`}
+        <div style="height:14px;"></div>
+        <div class="section-title">Moved to Next Steps <span class="count muted-count">${movedTotal}</span></div>
+        ${
+          movedTotal
+            ? `<table class="card">
+                <tr><td>
+                  <table class="tbl">
+                    <thead>
+                      <tr><th>Stage</th><th>Company</th><th>Role</th></tr>
+                    </thead>
+                    <tbody>${movedRows}</tbody>
+                  </table>
+                </td></tr>
+              </table>`
+            : `<div class="muted">No stage transitions into Screening/Interview/Offer today.</div>`
+        }
 
-        <div style="height:16px;"></div>
+        <div style="height:14px;"></div>
         <div class="section-title">Follow-ups & Events (Next Window)</div>
-        <div class="grid">
-          <div class="card">
-            <div class="card-title">Follow-up Reminders</div>
-            ${followUpsList}
-          </div>
-          <div class="card">
-            <div class="card-title">Scheduled Events</div>
-            ${eventsList}
-          </div>
+        <div class="two">
+          <table class="card">
+            <tr><td class="card-title">Follow-up Reminders</td></tr>
+            <tr><td>
+              ${
+                data.followUps.length
+                  ? `<table class="tbl">
+                      <thead>
+                        <tr><th>Company</th><th>Role</th><th>Status</th><th>Due</th><th>Prep</th></tr>
+                      </thead>
+                      <tbody>${followUpRows}</tbody>
+                    </table>`
+                  : `<div class="muted">No follow-up reminders due in the next window.</div>`
+              }
+            </td></tr>
+          </table>
+
+          <table class="card">
+            <tr><td class="card-title">Scheduled Events</td></tr>
+            <tr><td>
+              ${
+                data.scheduledEvents.length
+                  ? `<table class="tbl">
+                      <thead>
+                        <tr><th>Event</th><th>Company</th><th>Role</th><th>When</th><th>Status</th><th>Prep</th></tr>
+                      </thead>
+                      <tbody>${scheduledEventRows}</tbody>
+                    </table>`
+                  : `<div class="muted">No scheduled events in the next window.</div>`
+              }
+            </td></tr>
+          </table>
         </div>
 
-        <div style="height:18px;"></div>
-        <div style="color:#64748b;font-size:12px;line-height:1.5;">
+        <div style="height:12px;"></div>
+        <div class="tip">
           Tip: If a follow-up shows “Prep: Not generated yet”, open the application and generate the prep once to get a better email draft tomorrow.
         </div>
       </div>
 
       <style>
-        .grid { display:grid; gap:12px; grid-template-columns: 1fr; }
-        .card { border:1px solid rgba(255,255,255,0.08); background:#0f172a; border-radius:14px; padding:14px; }
-        .card-hero { background:linear-gradient(135deg, rgba(52,211,153,0.12), rgba(96,165,250,0.12)), #0f172a; border-color: rgba(52,211,153,0.25); }
-        .card-title { font-weight:700; letter-spacing: -0.01em; color:#e5e7eb; margin-bottom:6px; }
-        .big { font-size:34px; font-weight:800; margin:4px 0 10px; color:#e5e7eb; }
-        .section-title { font-weight:800; color:#e5e7eb; margin:0 0 8px; }
-        .list { padding-left:18px; margin:10px 0 0; }
-        .list li { margin:6px 0; color:#e5e7eb; }
-        .muted { color:#94a3b8; margin-top:8px; font-size:13px; }
-        .p p { margin:8px 0; }
-        .bullets { padding-left:18px; margin:10px 0 0; }
-        .bullets li { margin:6px 0; }
+        .header { padding:16px 18px; border-radius:16px; background:linear-gradient(135deg,#dbeafe,#fef3c7); border:1px solid rgba(17,24,39,0.06); }
+        .header-row { display:flex; align-items:center; gap:12px; }
+        .dot { width:12px; height:12px; border-radius:999px; background:#60a5fa; box-shadow:0 0 0 4px rgba(96,165,250,0.25); }
+        .header-title { font-size:18px; font-weight:800; letter-spacing:-0.01em; color:#111827; }
+        .header-sub { margin-top:6px; font-size:13px; color:#374151; }
+
+        .two { display:block; }
+
+        .card { width:100%; border:1px solid rgba(17,24,39,0.08); background:#ffffff; border-radius:16px; padding:14px; border-collapse:separate; }
+        .hero { background:linear-gradient(135deg, rgba(52,211,153,0.18), rgba(59,130,246,0.16)); border-radius:16px; padding:16px; }
+        .hero-title { font-weight:900; color:#0f172a; margin-bottom:8px; }
+        .hero-body p { margin:8px 0; color:#0f172a; }
+        .hero-bullets { padding-left:18px; margin:10px 0 0; }
+        .hero-bullets li { margin:6px 0; color:#0f172a; }
+
+        .card-title { font-weight:900; letter-spacing:-0.01em; color:#0f172a; padding-bottom:10px; }
+        .count { font-size:20px; font-weight:900; color:#111827; margin-left:8px; }
+        .rejected { color:#fb7185; }
+
+        .tbl { width:100%; border-collapse:collapse; }
+        .tbl th { text-align:left; font-size:12px; color:#334155; font-weight:800; padding:8px 8px; background:#f3f4ff; border-bottom:1px solid rgba(17,24,39,0.06); }
+        .tbl td { padding:8px 8px; border-bottom:1px solid rgba(17,24,39,0.05); font-size:13px; color:#0f172a; vertical-align:top; }
+        .tbl tr:last-child td { border-bottom:none; }
+        .role { color:#2563eb; font-weight:700; }
+        .rejected-role { color:#e11d48; font-weight:700; }
+        .muted { color:#64748b; font-size:13px; }
+        .muted-count { color:#64748b; font-weight:900; }
+        .stage { font-weight:900; }
+        .notes { margin-top:6px; color:#64748b; font-size:12px; }
+
+        .section-title { font-weight:900; color:#0f172a; margin:0 0 8px; font-size:14px; }
+
+        .tip { color:#64748b; font-size:12px; line-height:1.5; }
 
         @media (min-width: 680px) {
-          .grid { grid-template-columns: 1fr 1fr; }
+          .two { display:grid; gap:12px; grid-template-columns:1fr 1fr; }
         }
       </style>
     </body>
