@@ -5,6 +5,7 @@ import { prisma } from "@/lib/db";
 import { applicationSchema } from "@/lib/validations/application";
 import { logActivity } from "@/lib/activity";
 import { extensionCorsHeaders } from "@/lib/extension-cors";
+import { ensureUserJobSourceFromJobUrl } from "@/lib/ensure-user-job-source-from-url";
 
 export async function OPTIONS(req: NextRequest) {
   return NextResponse.json(null, {
@@ -53,5 +54,25 @@ export async function POST(req: NextRequest) {
 
   await logActivity(session.user.id, app.id, "Application created via extension");
 
-  return NextResponse.json({ id: app.id }, { status: 201, headers });
+  let jobSourceTracked = false;
+  if (data.status === "APPLIED" && data.jobUrl) {
+    const { added } = await ensureUserJobSourceFromJobUrl({
+      userId: session.user.id,
+      jobUrl: data.jobUrl,
+      companyName: data.company,
+    });
+    jobSourceTracked = added;
+    if (added) {
+      await logActivity(
+        session.user.id,
+        app.id,
+        "Careers board added to tracked job sources (auto)"
+      );
+    }
+  }
+
+  return NextResponse.json(
+    { id: app.id, jobSourceTracked },
+    { status: 201, headers }
+  );
 }

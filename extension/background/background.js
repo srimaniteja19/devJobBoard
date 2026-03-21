@@ -153,11 +153,15 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
     });
 
     if (settings.showNotifications !== false) {
+      let msg = `${jobData.title} at ${jobData.company} → ${defaultStatus}`;
+      if (defaultStatus === 'APPLIED' && result?.jobSourceTracked) {
+        msg += '. Careers board added to your job feed.';
+      }
       chrome.notifications.create({
         type: 'basic',
         iconUrl: 'icons/icon128.png',
         title: 'Saved to JobTracker ✓',
-        message: `${jobData.title} at ${jobData.company} → ${defaultStatus}`,
+        message: msg,
       });
     }
   } catch (err) {

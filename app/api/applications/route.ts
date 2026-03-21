@@ -4,6 +4,7 @@ import { authenticatedAction } from "@/lib/api-auth";
 import { applicationSchema } from "@/lib/validations/application";
 import { logActivity } from "@/lib/activity";
 import { parseYMDLocal } from "@/lib/date-helpers";
+import { ensureUserJobSourceFromJobUrl } from "@/lib/ensure-user-job-source-from-url";
 
 export async function GET() {
   const { user, unauthorized } = await authenticatedAction();
@@ -70,5 +71,22 @@ export async function POST(req: NextRequest) {
 
   await logActivity(user.id, app.id, "Application created");
 
-  return NextResponse.json({ id: app.id }, { status: 201 });
+  let jobSourceTracked = false;
+  if (data.status === "APPLIED" && data.jobUrl) {
+    const { added } = await ensureUserJobSourceFromJobUrl({
+      userId: user.id,
+      jobUrl: data.jobUrl,
+      companyName: data.company,
+    });
+    jobSourceTracked = added;
+    if (added) {
+      await logActivity(
+        user.id,
+        app.id,
+        "Careers board added to tracked job sources (auto)"
+      );
+    }
+  }
+
+  return NextResponse.json({ id: app.id, jobSourceTracked }, { status: 201 });
 }

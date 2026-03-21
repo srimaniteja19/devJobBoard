@@ -1,8 +1,65 @@
 /**
- * Job filtering: USA only, work type (onsite/hybrid/remote), date posted.
+ * Job filtering: USA only, work type (onsite/hybrid/remote), date posted,
+ * and software-engineering role titles for ATS feeds.
  */
 
 import type { JobListing } from "./jobs";
+
+/**
+ * Title must match at least one pattern (IC + common EM/tech-lead roles).
+ * Excludes ops, marketing, sales, etc. that often appear on the same boards.
+ */
+const ENGINEERING_TITLE_PATTERNS: RegExp[] = [
+  /\bsoftware\s+(engineer|developer|dev|architect)\b/i,
+  /\bsoftware\s+engineering\b/i,
+  /\b(swe|sdet)\b/i,
+  /\bfull[\s-]?stack\b/i,
+  /\b(back|front)[\s-]?end\s+(engineer|developer|dev|architect)\b/i,
+  /\bbackend\s+(engineer|developer|dev|architect)\b/i,
+  /\bfrontend\s+(engineer|developer|dev|architect)\b/i,
+  /\bforward\s+deployed\b/i,
+  /\bfounding\s+engineer\b/i,
+  /\b(web|mobile|ios|android)\s+(engineer|developer|dev)\b/i,
+  /\b(staff|principal|distinguished)\s+(software\s+)?engineer\b/i,
+  /\b(lead|senior|sr\.?|junior|jr\.?|mid|associate|intern)\s+(software\s+)?(engineer|developer)\b/i,
+  /\b(lead|senior|sr\.?)\s+(back|front)[\s-]?end\b/i,
+  /\bdevops\b/i,
+  /\b(sre|site reliability)\b/i,
+  /\bplatform\s+engineer\b/i,
+  /\binfrastructure\s+engineer\b/i,
+  /\b(data|ml|machine learning|ai)\s+engineer\b/i,
+  /\bsecurity\s+engineer\b/i,
+  /\bembedded\s+(software\s+)?engineer\b/i,
+  /\bfirmware\s+engineer\b/i,
+  /\bqa\s+engineer\b/i,
+  /\bquality\s+engineer\b/i,
+  /\btest\s+(engineer|automation)\b/i,
+  /\bautomation\s+engineer\b/i,
+  /\bbuild\s+engineer\b/i,
+  /\brelease\s+engineer\b/i,
+  /\bperformance\s+engineer\b/i,
+  /\bcloud\s+engineer\b/i,
+  /\bcompiler\s+engineer\b/i,
+  /\bengineer\s*[,;]?\s*(software|backend|frontend|full)/i,
+  /\b(head|director|vp|vice president)\s+of\s+engineering\b/i,
+  /\bengineering\s+manager\b/i,
+  /\btech\s+lead\b/i,
+  /\btechnical\s+lead\b/i,
+  /\b(member\s+of\s+)?technical\s+staff\b/i,
+  /\bapps?\s+engineer\b/i,
+];
+
+/** True if the job title looks like a software / product-engineering IC or EM role. */
+export function isEngineeringJobTitle(title: string): boolean {
+  const t = (title ?? "").trim();
+  if (!t) return false;
+  return ENGINEERING_TITLE_PATTERNS.some((re) => re.test(t));
+}
+
+/** Drop non-engineering postings from ATS / scrape results (HR, marketing, ops, etc.). */
+export function filterToEngineeringRoles<T extends { title: string }>(jobs: T[]): T[] {
+  return jobs.filter((j) => isEngineeringJobTitle(j.title));
+}
 
 /** Work types we support */
 export type WorkType = "remote" | "hybrid" | "onsite";

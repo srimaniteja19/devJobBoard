@@ -29,6 +29,6 @@ async function _fetchAllJobsUncached(): Promise<JobListing[]> {
 /** Cached base jobs (15 min). Does not include user's custom careers pages. */
 export const fetchAllJobsBase = unstable_cache(
   _fetchAllJobsUncached,
-  ["jobs-feed-base-v2"],
+  ["jobs-feed-base-v3-engineering-titles"],
   { revalidate: 900 }
 );

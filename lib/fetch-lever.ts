@@ -1,6 +1,7 @@
 /** Fetch jobs from Lever postings API (public, no auth). */
 
 import { LEVER_BOARDS } from "./job-sources";
+import { filterToEngineeringRoles } from "./job-filters";
 
 interface LeverJob {
   id?: string;
@@ -83,7 +84,7 @@ export async function fetchLeverFromBoards(
       jobs.push(...r.value);
     }
   }
-  return jobs;
+  return filterToEngineeringRoles(jobs);
 }
 
 export async function fetchAllLeverJobs(): Promise<NormalizedJob[]> {

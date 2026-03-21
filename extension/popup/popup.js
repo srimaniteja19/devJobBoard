@@ -282,7 +282,7 @@ async function handleSave() {
     });
 
     savedAppId = res.id;
-    showSuccess(title, company);
+    showSuccess(title, company, res.jobSourceTracked === true);
   } catch (err) {
     btn.disabled = false;
     btn.classList.remove('loading');
@@ -299,8 +299,17 @@ async function handleSave() {
 
 // ─── Success ────────────────────────────────────────────────
 
-function showSuccess(role, company) {
+function showSuccess(role, company, jobSourceTracked) {
   $('#success-detail').textContent = `${role} at ${company}`;
+
+  const jobSourceLine = $('#success-job-source');
+  if (jobSourceTracked) {
+    jobSourceLine.textContent =
+      "This company's careers page was added to your tracked job boards.";
+    jobSourceLine.classList.remove('hidden');
+  } else {
+    jobSourceLine.classList.add('hidden');
+  }
 
   const badge = $('#success-status-badge');
   const colors = {

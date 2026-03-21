@@ -1,4 +1,5 @@
 import { ASHBY_BOARDS } from "./job-sources";
+import { filterToEngineeringRoles } from "./job-filters";
 
 interface AshbyAddress {
   postalAddress?: {
@@ -98,5 +99,5 @@ export async function fetchAshbyFromBoards(
       jobs.push(...r.value);
     }
   }
-  return jobs;
+  return filterToEngineeringRoles(jobs);
 }

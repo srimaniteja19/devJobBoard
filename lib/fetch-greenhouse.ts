@@ -1,4 +1,5 @@
 import { GREENHOUSE_BOARDS } from "./job-sources";
+import { filterToEngineeringRoles } from "./job-filters";
 
 export interface GreenhouseJob {
   id: number;
@@ -81,5 +82,5 @@ export async function fetchGreenhouseFromBoards(
       jobs.push(...r.value);
     }
   }
-  return jobs;
+  return filterToEngineeringRoles(jobs);
 }

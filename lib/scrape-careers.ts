@@ -4,6 +4,7 @@
  */
 
 import type { JobListing } from "./jobs";
+import { filterToEngineeringRoles } from "./job-filters";
 
 const FETCH_TIMEOUT_MS = 6000;
 
@@ -102,7 +103,7 @@ export async function scrapeCareersPage(
         };
       });
 
-    return jobs;
+    return filterToEngineeringRoles(jobs);
   } catch {
     clearTimeout(timeout);
     return [];
