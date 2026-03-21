@@ -1,10 +1,25 @@
 import { Resend } from "resend";
 import { prisma } from "@/lib/db";
-import { DEFAULT_REPORT_TIME_ZONE, formatInTimeZone, getTimeZoneDateYMD, startOfTimeZoneDay } from "@/lib/timezone";
+import {
+  addCalendarDaysYMD,
+  DEFAULT_REPORT_TIME_ZONE,
+  formatInTimeZone,
+  getTimeZoneDateYMD,
+  startOfTimeZoneDay,
+  startOfTimeZoneDayFromYMD,
+} from "@/lib/timezone";
 import { renderDailyReportEmailHtml, type DailyReportEmailData } from "./renderDailyReportEmail";
 import { EVENT_LABELS, type AppStatus } from "@/types";
 import { PREP_SECTIONS_BY_STAGE } from "@/lib/prep-config";
 import { generateJson, isGeminiConfigured } from "@/lib/gemini";
+
+/** Notable/stretch companies for highlighting in the applied table and company-of-day selection. */
+const STRETCH_COMPANIES = new Set([
+  "google", "meta", "facebook", "amazon", "apple", "microsoft", "netflix", "openai", "anthropic",
+  "stripe", "figma", "notion", "linear", "vercel", "github", "spotify", "airbnb", "uber", "lyft",
+  "salesforce", "adobe", "nvidia", "tesla", "coinbase", "square", "block", "twilio", "databricks",
+  "snowflake", "mongodb", "elastic", "atlassian", "slack", "zoom", "dropbox", "box", "palantir",
+].map((s) => s.toLowerCase()));
 
 function parseEmailList(input: string): string[] {
   const parts = input
@@ -35,25 +50,16 @@ async function maybeGenerateCoachNote(report: {
 }) {
   if (!isGeminiConfigured()) return null;
 
-  const SYSTEM = `You are a concise career coach.
+  const SYSTEM = `You are a concise career coach. Dry wit preferred. No platitudes.
 Return a JSON object with:
 {
   "title": "short title",
   "paragraphs": ["2-3 short paragraphs max"],
   "bullets": ["5 short, actionable bullets for the next 24 hours"]
 }
-Use a supportive, minimal tone. No markdown. Output valid JSON only.`;
+Output valid JSON only. No markdown.`;
 
-  const userInput = `Here are today's job-application stats (ET):
-- Applied: ${report.appliedCount}
-- Rejected: ${report.rejectedCount}
-- Moved: ${Object.entries(report.movedCounts)
-      .map(([k, v]) => `${k}=${v}`)
-      .join(", ")}
-- Follow-up items in next window: ${report.followUpCount}
-- Scheduled events in next window: ${report.scheduledEventCount}
-
-Write the coach note for the user for the next 24 hours.`;
+  const userInput = `Stats (ET): Applied ${report.appliedCount}, Rejected ${report.rejectedCount}, Moved ${Object.entries(report.movedCounts).map(([k, v]) => `${k}=${v}`).join(", ")}, Follow-ups ${report.followUpCount}, Events ${report.scheduledEventCount}. Coach note for next 24h.`;
 
   try {
     const result = (await generateJson(SYSTEM, userInput)) as {
@@ -66,6 +72,67 @@ Write the coach note for the user for the next 24 hours.`;
       coachParagraphs: result.paragraphs ?? undefined,
       coachBullets: result.bullets ?? undefined,
     };
+  } catch {
+    return null;
+  }
+}
+
+async function maybeGeneratePullQuote(report: {
+  appliedCount: number;
+  rejectedCount: number;
+  pendingCount: number;
+}) {
+  if (!isGeminiConfigured()) return null;
+
+  const SYSTEM = `You write dry, sardonic one-liners about job application stats.
+Return JSON: { "lines": ["line1", "line2", "line3"] }
+Format: 3 lines — (1) action taken, (2) outcome/reaction, (3) sardonic punchline.
+Example: "Sent 28 applications." / "Received 5 rejections." / "23 companies are still considering their feelings."
+Keep each line under 60 chars. Output valid JSON only.`;
+
+  const userInput = `Applied: ${report.appliedCount}, Rejected: ${report.rejectedCount}, Pending (no response yet): ${report.pendingCount}. Write 3-line pull quote.`;
+
+  try {
+    const result = (await generateJson(SYSTEM, userInput)) as { lines?: string[] };
+    const lines = result.lines?.filter((l) => typeof l === "string" && l.length > 0) ?? [];
+    return lines.length >= 3 ? lines.slice(0, 3).join(" / ") : null;
+  } catch {
+    return null;
+  }
+}
+
+async function maybeGenerateRejectionAnalysis(rejections: { company: string; role: string }[]) {
+  if (!isGeminiConfigured() || rejections.length === 0) return null;
+
+  const SYSTEM = `Analyze job rejections. Return JSON:
+{
+  "items": [{ "company": "...", "role": "...", "signal": "stack"|"domain"|"generic" }],
+  "patterns": [{ "dot": "red"|"gold"|"neutral", "body": "one short sentence" }]
+}
+Signal: stack = language/tech mismatch, domain = keyword/domain miss, generic = unclear.
+Dot: red = stack issue, gold = domain issue, neutral = recommendation.
+Max 3 patterns. Last pattern must be neutral (recommendation). Output valid JSON only.`;
+
+  const userInput = `Rejections: ${JSON.stringify(rejections.slice(0, 10))}. Analyze and return items+patterns.`;
+
+  try {
+    const result = (await generateJson(SYSTEM, userInput)) as {
+      items?: { company: string; role: string; signal: string }[];
+      patterns?: { dot: string; body: string }[];
+    };
+    const items = (result.items ?? []).slice(0, rejections.length).map((it) => ({
+      company: it.company ?? "",
+      role: it.role ?? "",
+      signal: (it.signal === "stack" || it.signal === "domain" || it.signal === "generic" ? it.signal : "generic") as "stack" | "domain" | "generic",
+    }));
+    const patterns = (result.patterns ?? []).slice(0, 3).map((p) => ({
+      dot: (p.dot === "red" || p.dot === "gold" || p.dot === "neutral" ? p.dot : "neutral") as "red" | "gold" | "neutral",
+      body: String(p.body ?? ""),
+    }));
+    if (patterns.length > 0 && patterns[patterns.length - 1].dot !== "neutral") {
+      patterns[patterns.length - 1] = { dot: "neutral", body: patterns[patterns.length - 1].body };
+    }
+    return { items, patterns };
   } catch {
     return null;
   }
@@ -273,6 +340,53 @@ async function getDailyReportEmailDataForUser(userId: string, reportDateYMD: str
 
   const coach = await maybeGenerateCoachNote(reportForCoach);
 
+  // 7-day sparkline: applied counts per day (report timezone)
+  const sparklineData: { day: string; label: string; count: number }[] = [];
+  const tz = DEFAULT_REPORT_TIME_ZONE;
+  const dayAbbrs = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  let weeklyTotal = 0;
+  for (let i = 6; i >= 0; i--) {
+    const ymd = addCalendarDaysYMD(reportDateYMD, -i);
+    const dayStart = startOfTimeZoneDayFromYMD(ymd, tz);
+    const dayEnd = new Date(dayStart.getTime() + 24 * 60 * 60 * 1000 - 1);
+    const dayNum = parseInt(ymd.slice(8, 10), 10);
+    const dayOfWeek = new Date(dayStart.getTime() + 12 * 60 * 60 * 1000).getDay();
+    const count = await prisma.application.count({
+      where: {
+        userId,
+        status: "APPLIED",
+        appliedAt: { gte: dayStart, lte: dayEnd },
+      },
+    });
+    weeklyTotal += count;
+    sparklineData.push({
+      day: ymd,
+      label: `${dayAbbrs[dayOfWeek]} ${dayNum}`,
+      count,
+    });
+  }
+
+  // Company of the day: first stretch company from applied, else first applied
+  const isStretch = (company: string) =>
+    STRETCH_COMPANIES.has(company.trim().toLowerCase());
+  const stretchFromApplied = appliedDistinct.find((a) => isStretch(a.company));
+  const companyOfTheDay = (stretchFromApplied ?? appliedDistinct[0])
+    ? {
+        company: (stretchFromApplied ?? appliedDistinct[0]).company,
+        role: (stretchFromApplied ?? appliedDistinct[0]).role,
+        isStretch: !!stretchFromApplied,
+      }
+    : undefined;
+
+  const pendingCount = Math.max(0, appliedDistinct.length - rejectedApps.length);
+  const pullQuote = await maybeGeneratePullQuote({
+    appliedCount: appliedDistinct.length,
+    rejectedCount: rejectedApps.length,
+    pendingCount,
+  });
+
+  const rejectionAnalysis = await maybeGenerateRejectionAnalysis(rejectedApps);
+
   const data: DailyReportEmailData = {
     reportDateYMD,
     generatedAtISO: new Date().toISOString(),
@@ -284,6 +398,11 @@ async function getDailyReportEmailDataForUser(userId: string, reportDateYMD: str
     coachTitle: coach?.coachTitle,
     coachParagraphs: coach?.coachParagraphs,
     coachBullets: coach?.coachBullets,
+    pullQuote: pullQuote ?? undefined,
+    sparklineData,
+    weeklyTotal,
+    companyOfTheDay,
+    rejectionAnalysis: rejectionAnalysis ?? undefined,
   };
 
   return data;
