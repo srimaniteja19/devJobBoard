@@ -36,26 +36,62 @@ export type DailyReportEmailData = {
   coachBullets?: string[];
 };
 
+// Design system: Dark Editorial · Monospace × Serif · Gold Accent
+const COLORS = {
+  bgPage: "#0f0f0f",
+  bgCard: "#111111",
+  bgCardHeader: "linear-gradient(135deg, #1a1a1a 0%, #0d0d0d 100%)",
+  bgRowAlt: "#151515",
+  bgRowHighlight: "#1a1500",
+  bgFooter: "#0d0d0d",
+  borderCard: "#2a2a2a",
+  borderRow: "#1a1a1a",
+  borderSection: "#222222",
+  accentGold: "#f5c842",
+  accentGoldMid: "#f0a500",
+  accentGoldDeep: "#e07b00",
+  accentGoldMuted: "#a08020",
+  accentRed: "#ff5f5f",
+  textPrimary: "#ffffff",
+  textSecondary: "#cccccc",
+  textTertiary: "#aaaaaa",
+  textMuted: "#777777",
+  textDim: "#555555",
+  textGhost: "#444444",
+  textFaint: "#333333",
+};
+
+const ACCENT_GRADIENT = "linear-gradient(90deg, #f5c842 0%, #f0a500 50%, #e07b00 100%)";
+const SECTION_DIVIDER = "linear-gradient(90deg, #f5c842, #333333, transparent)";
+
+function formatMetadata(d: Date): string {
+  const pad = (n: number) => String(n).padStart(2, "0");
+  const h = d.getHours();
+  const m = d.getMinutes();
+  const ampm = h >= 12 ? "PM" : "AM";
+  const h12 = h % 12 || 12;
+  return `${pad(d.getMonth() + 1)}/${pad(d.getDate())}/${d.getFullYear()} · ${h12}:${pad(m)} ${ampm} ET`;
+}
+
 export function renderDailyReportEmailHtml(data: DailyReportEmailData): {
   html: string;
   text: string;
 } {
   const movedTotal = Object.values(data.moved).reduce((acc, apps) => acc + apps.length, 0);
+  const genDate = new Date(data.generatedAtISO);
 
-  const stageColor = (stage: string) => {
-    if (stage === "SCREENING") return "#fbbf24";
-    if (stage === "INTERVIEW") return "#fb923c";
-    if (stage === "OFFER") return "#e8ff47";
-    return "#a78bfa";
+  const statColor = (val: number, isNegative: boolean) => {
+    if (isNegative) return val > 0 ? COLORS.accentRed : COLORS.textMuted;
+    return val > 0 ? COLORS.accentGold : "#888888";
   };
 
   const appliedRows = data.applied
     .map(
-      (a) => `
+      (a, i) => `
       <tr>
-        <td>${escape(a.company)}</td>
-        <td class="role">${escape(a.role)}</td>
-        <td class="muted">${escape(a.appliedAtISO)}</td>
+        <td style="padding:7px 6px;border-bottom:1px solid ${COLORS.borderRow};font-family:Georgia,serif;font-size:12px;color:${COLORS.textSecondary};vertical-align:top;"${i % 2 === 1 ? ` bgcolor="${COLORS.bgRowAlt}"` : ""}>${escape(a.company)}</td>
+        <td style="padding:7px 6px;border-bottom:1px solid ${COLORS.borderRow};font-family:Georgia,serif;font-size:12px;color:${COLORS.textMuted};vertical-align:top;"${i % 2 === 1 ? ` bgcolor="${COLORS.bgRowAlt}"` : ""}>${escape(a.role)}</td>
+        <td style="padding:7px 6px;border-bottom:1px solid ${COLORS.borderRow};font-family:'Courier New',monospace;font-size:10px;color:${COLORS.textDim};text-align:right;vertical-align:top;"${i % 2 === 1 ? ` bgcolor="${COLORS.bgRowAlt}"` : ""}>${escape(a.appliedAtISO)}</td>
       </tr>
     `
     )
@@ -63,10 +99,10 @@ export function renderDailyReportEmailHtml(data: DailyReportEmailData): {
 
   const rejectedRows = data.rejected
     .map(
-      (a) => `
+      (a, i) => `
       <tr>
-        <td>${escape(a.company)}</td>
-        <td class="role rejected-role">${escape(a.role)}</td>
+        <td style="padding:7px 6px;border-bottom:1px solid ${COLORS.borderRow};font-family:Georgia,serif;font-size:12px;color:${COLORS.textSecondary};vertical-align:top;"${i % 2 === 1 ? ` bgcolor="${COLORS.bgRowAlt}"` : ""}>${escape(a.company)}</td>
+        <td style="padding:7px 6px;border-bottom:1px solid ${COLORS.borderRow};font-family:Georgia,serif;font-size:12px;color:${COLORS.accentRed};vertical-align:top;"${i % 2 === 1 ? ` bgcolor="${COLORS.bgRowAlt}"` : ""}>${escape(a.role)}</td>
       </tr>
     `
     )
@@ -76,11 +112,11 @@ export function renderDailyReportEmailHtml(data: DailyReportEmailData): {
     .sort(([a], [b]) => a.localeCompare(b))
     .flatMap(([stage, apps]) =>
       apps.map(
-        (a) => `
+        (a, i) => `
         <tr>
-          <td class="stage" style="color:${stageColor(stage)};">${escape(stage)}</td>
-          <td>${escape(a.company)}</td>
-          <td class="role">${escape(a.role)}</td>
+          <td style="padding:7px 6px;border-bottom:1px solid ${COLORS.borderRow};font-family:'Courier New',monospace;font-size:10px;color:${COLORS.accentGold};letter-spacing:1px;text-transform:uppercase;vertical-align:top;"${i % 2 === 1 ? ` bgcolor="${COLORS.bgRowAlt}"` : ""}>${escape(stage)}</td>
+          <td style="padding:7px 6px;border-bottom:1px solid ${COLORS.borderRow};font-family:Georgia,serif;font-size:12px;color:${COLORS.textSecondary};vertical-align:top;"${i % 2 === 1 ? ` bgcolor="${COLORS.bgRowAlt}"` : ""}>${escape(a.company)}</td>
+          <td style="padding:7px 6px;border-bottom:1px solid ${COLORS.borderRow};font-family:Georgia,serif;font-size:12px;color:${COLORS.accentGoldMuted};vertical-align:top;"${i % 2 === 1 ? ` bgcolor="${COLORS.bgRowAlt}"` : ""}>${escape(a.role)}</td>
         </tr>
       `
       )
@@ -88,38 +124,38 @@ export function renderDailyReportEmailHtml(data: DailyReportEmailData): {
     .join("");
 
   const followUpRows = data.followUps
-    .map((f) => {
+    .map((f, i) => {
       const prep =
         f.prepSectionLabels.length > 0
           ? escape(f.prepSectionLabels.slice(0, 3).join(", "))
           : "Not generated yet";
       return `
         <tr>
-          <td>${escape(f.company)}</td>
-          <td class="role">${escape(f.role)}</td>
-          <td class="muted">${escape(f.status)}</td>
-          <td class="muted">${escape(f.dueAtISO)}</td>
-          <td class="muted">${prep}</td>
+          <td style="padding:7px 6px;border-bottom:1px solid ${COLORS.borderRow};font-family:Georgia,serif;font-size:12px;color:${COLORS.textSecondary};vertical-align:top;"${i % 2 === 1 ? ` bgcolor="${COLORS.bgRowAlt}"` : ""}>${escape(f.company)}</td>
+          <td style="padding:7px 6px;border-bottom:1px solid ${COLORS.borderRow};font-family:Georgia,serif;font-size:12px;color:${COLORS.textMuted};vertical-align:top;"${i % 2 === 1 ? ` bgcolor="${COLORS.bgRowAlt}"` : ""}>${escape(f.role)}</td>
+          <td style="padding:7px 6px;border-bottom:1px solid ${COLORS.borderRow};font-family:'Courier New',monospace;font-size:10px;color:${COLORS.textDim};vertical-align:top;"${i % 2 === 1 ? ` bgcolor="${COLORS.bgRowAlt}"` : ""}>${escape(f.status)}</td>
+          <td style="padding:7px 6px;border-bottom:1px solid ${COLORS.borderRow};font-family:'Courier New',monospace;font-size:10px;color:${COLORS.textDim};text-align:right;vertical-align:top;"${i % 2 === 1 ? ` bgcolor="${COLORS.bgRowAlt}"` : ""}>${escape(f.dueAtISO)}</td>
+          <td style="padding:7px 6px;border-bottom:1px solid ${COLORS.borderRow};font-family:Georgia,serif;font-size:12px;color:${COLORS.textDim};vertical-align:top;"${i % 2 === 1 ? ` bgcolor="${COLORS.bgRowAlt}"` : ""}>${prep}</td>
         </tr>
       `;
     })
     .join("");
 
   const scheduledEventRows = data.scheduledEvents
-    .map((e) => {
+    .map((e, i) => {
       const prep =
         e.prepSectionLabels.length > 0
           ? escape(e.prepSectionLabels.slice(0, 3).join(", "))
           : "Not generated yet";
-      const notes = e.notes ? `<div class="notes">${escape(e.notes)}</div>` : "";
+      const notes = e.notes ? `<div style="margin-top:6px;color:${COLORS.textDim};font-size:11px;">${escape(e.notes)}</div>` : "";
       return `
         <tr>
-          <td class="muted">${escape(e.eventLabel)}</td>
-          <td>${escape(e.company)}</td>
-          <td class="role">${escape(e.role)}</td>
-          <td class="muted">${escape(e.scheduledAtISO)}</td>
-          <td class="muted">${escape(e.status)}</td>
-          <td class="muted">${prep}${notes}</td>
+          <td style="padding:7px 6px;border-bottom:1px solid ${COLORS.borderRow};font-family:'Courier New',monospace;font-size:10px;color:${COLORS.textDim};vertical-align:top;"${i % 2 === 1 ? ` bgcolor="${COLORS.bgRowAlt}"` : ""}>${escape(e.eventLabel)}</td>
+          <td style="padding:7px 6px;border-bottom:1px solid ${COLORS.borderRow};font-family:Georgia,serif;font-size:12px;color:${COLORS.textSecondary};vertical-align:top;"${i % 2 === 1 ? ` bgcolor="${COLORS.bgRowAlt}"` : ""}>${escape(e.company)}</td>
+          <td style="padding:7px 6px;border-bottom:1px solid ${COLORS.borderRow};font-family:Georgia,serif;font-size:12px;color:${COLORS.textMuted};vertical-align:top;"${i % 2 === 1 ? ` bgcolor="${COLORS.bgRowAlt}"` : ""}>${escape(e.role)}</td>
+          <td style="padding:7px 6px;border-bottom:1px solid ${COLORS.borderRow};font-family:'Courier New',monospace;font-size:10px;color:${COLORS.textDim};text-align:right;vertical-align:top;"${i % 2 === 1 ? ` bgcolor="${COLORS.bgRowAlt}"` : ""}>${escape(e.scheduledAtISO)}</td>
+          <td style="padding:7px 6px;border-bottom:1px solid ${COLORS.borderRow};font-family:'Courier New',monospace;font-size:10px;color:${COLORS.textDim};vertical-align:top;"${i % 2 === 1 ? ` bgcolor="${COLORS.bgRowAlt}"` : ""}>${escape(e.status)}</td>
+          <td style="padding:7px 6px;border-bottom:1px solid ${COLORS.borderRow};font-family:Georgia,serif;font-size:12px;color:${COLORS.textDim};vertical-align:top;"${i % 2 === 1 ? ` bgcolor="${COLORS.bgRowAlt}"` : ""}>${prep}${notes}</td>
         </tr>
       `;
     })
@@ -127,18 +163,13 @@ export function renderDailyReportEmailHtml(data: DailyReportEmailData): {
 
   const coachBlock = data.coachTitle
     ? `
-      <table class="card">
+      <table cellpadding="0" cellspacing="0" border="0" width="100%" style="border-collapse:collapse;">
         <tr>
-          <td class="hero">
-            <div class="hero-title">${escape(data.coachTitle)}</div>
+          <td style="padding:28px 40px 24px;">
+            <div style="font-family:Georgia,serif;font-size:18px;font-weight:700;color:${COLORS.textPrimary};line-height:1.3;margin-bottom:12px;">${escape(data.coachTitle)}</div>
             ${
               data.coachParagraphs?.length
-                ? `<div class="hero-body">${data.coachParagraphs.map((p) => `<p>${escape(p)}</p>`).join("")}</div>`
-                : ""
-            }
-            ${
-              data.coachBullets?.length
-                ? `<ul class="hero-bullets">${data.coachBullets.slice(0, 5).map((b) => `<li>${escape(b)}</li>`).join("")}</ul>`
+                ? data.coachParagraphs.map((p) => `<p style="font-family:Georgia,serif;font-size:14px;color:${COLORS.textSecondary};line-height:1.6;margin:8px 0;">${escape(p)}</p>`).join("")
                 : ""
             }
           </td>
@@ -146,6 +177,31 @@ export function renderDailyReportEmailHtml(data: DailyReportEmailData): {
       </table>
     `
     : "";
+
+  const actionItems = (data.coachBullets ?? []).slice(0, 5);
+  const actionItemRows = actionItems
+    .map((bullet, idx) => {
+      const isDeemph = idx === 4; // badge 5 is de-emphasized
+      const badgeBg = isDeemph ? COLORS.textFaint : COLORS.accentGold;
+      const badgeColor = isDeemph ? COLORS.accentGold : "#000000";
+      const badgeBorder = isDeemph ? `border:1px solid ${COLORS.accentGold};` : "";
+      const isLast = idx === actionItems.length - 1;
+      return `
+        <tr>
+          <td style="padding:10px 0;vertical-align:middle;${!isLast ? `border-bottom:1px solid ${COLORS.borderRow};` : ""}">
+            <table cellpadding="0" cellspacing="0" border="0" width="100%">
+              <tr>
+                <td width="42" style="vertical-align:middle;">
+                  <div style="width:28px;height:28px;border-radius:50%;background:${badgeBg};color:${badgeColor};font-family:'Courier New',monospace;font-size:11px;font-weight:700;text-align:center;line-height:28px;${badgeBorder}">${idx + 1}</div>
+                </td>
+                <td style="padding-left:14px;font-family:Georgia,serif;font-size:14px;color:${COLORS.textTertiary};line-height:1.6;vertical-align:middle;">${escape(bullet)}</td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+      `;
+    })
+    .join("");
 
   const text = [
     `Daily Job Board Report — ${data.reportDateYMD}`,
@@ -168,173 +224,261 @@ export function renderDailyReportEmailHtml(data: DailyReportEmailData): {
     ...data.scheduledEvents.map((e) => `- ${e.eventLabel}: ${e.company} — ${e.role} (When: ${e.scheduledAtISO})`),
   ].join("\n");
 
+  const preheader = `Your daily job board summary · ${data.applied.length} applied · ${data.rejected.length} rejected`;
+
   const html = `<!doctype html>
-  <html>
-    <head>
-      <meta charset="utf-8"/>
-      <meta name="viewport" content="width=device-width, initial-scale=1"/>
-      <title>Daily Job Board Report</title>
-    </head>
-    <body style="margin:0;padding:0;background:#f6f7ff;color:#111827;font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,'Apple Color Emoji','Segoe UI Emoji';">
-      <div style="max-width:760px;margin:0 auto;padding:22px;">
-        <div class="header">
-          <div class="header-row">
-            <div class="dot"></div>
-            <div class="header-title">Daily Job Board Report</div>
-          </div>
-          <div class="header-sub">
-            Date: <b>${escape(data.reportDateYMD)}</b> • Generated: <span>${escape(new Date(data.generatedAtISO).toISOString())}</span>
-          </div>
-        </div>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Daily Job Board Report</title>
+</head>
+<body style="margin:0;padding:40px 16px;background:${COLORS.bgPage};color:${COLORS.textSecondary};font-family:Georgia,serif;font-size:16px;line-height:1.7;">
+  <div style="font-size:1px;max-height:0;overflow:hidden;opacity:0;line-height:0;">${escape(preheader)}</div>
 
-        <div style="height:14px;"></div>
-        ${coachBlock}
+  <table cellpadding="0" cellspacing="0" border="0" width="100%" style="max-width:620px;margin:0 auto;">
+    <tr>
+      <td>
+        <!-- Accent Bar Top -->
+        <div style="height:4px;background:${ACCENT_GRADIENT};border-radius:4px 4px 0 0;"></div>
 
-        <div style="height:14px;"></div>
+        <!-- Card -->
+        <table cellpadding="0" cellspacing="0" border="0" width="100%" style="width:100%;max-width:620px;background:${COLORS.bgCard};border:1px solid ${COLORS.borderCard};border-top:none;border-radius:0 0 4px 4px;">
+          <tr>
+            <td>
+              <!-- Header -->
+              <table cellpadding="0" cellspacing="0" border="0" width="100%" style="background:${COLORS.bgCardHeader};">
+                <tr>
+                  <td style="padding:36px 40px 28px;">
+                    <table cellpadding="0" cellspacing="0" border="0" width="100%">
+                      <tr>
+                        <td>
+                          <div style="font-family:'Courier New',monospace;font-size:10px;font-weight:400;color:${COLORS.accentGold};letter-spacing:3px;text-transform:uppercase;margin-bottom:12px;">→ DAILY REPORT</div>
+                          <h1 style="margin:0 0 8px;font-family:Georgia,serif;font-size:34px;font-weight:700;color:${COLORS.textPrimary};line-height:1.15;letter-spacing:-0.5px;">
+                            Daily <span style="color:${COLORS.accentGold};">Job Board</span> Report
+                          </h1>
+                          <div style="font-family:'Courier New',monospace;font-size:11px;color:${COLORS.textDim};letter-spacing:1px;">${escape(data.reportDateYMD)} · ${escape(formatMetadata(genDate))}</div>
+                        </td>
+                        <td align="right" valign="top" style="width:120px;">
+                          <div style="font-family:Georgia,serif;font-size:72px;font-weight:700;color:${COLORS.accentGold};letter-spacing:-3px;line-height:1;">${data.applied.length}</div>
+                          <div style="font-family:'Courier New',monospace;font-size:10px;color:${COLORS.textDim};letter-spacing:2px;text-transform:uppercase;">APPLIED</div>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
 
-        <div class="two">
-          <table class="card">
-            <tr><td class="card-title">
-              Applied <span class="count">${data.applied.length}</span>
-            </td></tr>
-            <tr>
-              <td>
-                ${
-                  data.applied.length
-                    ? `<table class="tbl">
-                        <thead>
-                          <tr><th>Company</th><th>Role</th><th>Applied</th></tr>
-                        </thead>
-                        <tbody>${appliedRows}</tbody>
-                      </table>`
-                    : `<div class="muted">No new applications marked as applied.</div>`
-                }
-              </td>
-            </tr>
-          </table>
+              <!-- Stats Band -->
+              <table cellpadding="0" cellspacing="0" border="0" width="100%" style="border-collapse:collapse;">
+                <tr>
+                  <td style="padding:18px 0;text-align:center;border-right:1px solid ${COLORS.borderSection};border-top:1px solid ${COLORS.borderSection};border-bottom:1px solid ${COLORS.borderSection};width:25%;">
+                    <div style="font-family:Georgia,serif;font-size:28px;font-weight:700;color:${statColor(data.applied.length, false)};">${data.applied.length}</div>
+                    <div style="font-family:'Courier New',monospace;font-size:9px;color:${COLORS.textGhost};letter-spacing:2px;text-transform:uppercase;margin-top:4px;">APPLIED</div>
+                  </td>
+                  <td style="padding:18px 0;text-align:center;border-right:1px solid ${COLORS.borderSection};border-top:1px solid ${COLORS.borderSection};border-bottom:1px solid ${COLORS.borderSection};width:25%;">
+                    <div style="font-family:Georgia,serif;font-size:28px;font-weight:700;color:${statColor(data.rejected.length, true)};">${data.rejected.length}</div>
+                    <div style="font-family:'Courier New',monospace;font-size:9px;color:${COLORS.textGhost};letter-spacing:2px;text-transform:uppercase;margin-top:4px;">REJECTED</div>
+                  </td>
+                  <td style="padding:18px 0;text-align:center;border-right:1px solid ${COLORS.borderSection};border-top:1px solid ${COLORS.borderSection};border-bottom:1px solid ${COLORS.borderSection};width:25%;">
+                    <div style="font-family:Georgia,serif;font-size:28px;font-weight:700;color:${statColor(movedTotal, false)};">${movedTotal}</div>
+                    <div style="font-family:'Courier New',monospace;font-size:9px;color:${COLORS.textGhost};letter-spacing:2px;text-transform:uppercase;margin-top:4px;">MOVED</div>
+                  </td>
+                  <td style="padding:18px 0;text-align:center;border-top:1px solid ${COLORS.borderSection};border-bottom:1px solid ${COLORS.borderSection};width:25%;">
+                    <div style="font-family:Georgia,serif;font-size:28px;font-weight:700;color:${statColor(data.followUps.length + data.scheduledEvents.length, false)};">${data.followUps.length + data.scheduledEvents.length}</div>
+                    <div style="font-family:'Courier New',monospace;font-size:9px;color:${COLORS.textGhost};letter-spacing:2px;text-transform:uppercase;margin-top:4px;">NEXT UP</div>
+                  </td>
+                </tr>
+              </table>
 
-          <table class="card">
-            <tr><td class="card-title">
-              Rejected <span class="count rejected">${data.rejected.length}</span>
-            </td></tr>
-            <tr>
-              <td>
-                ${
-                  data.rejected.length
-                    ? `<table class="tbl">
-                        <thead>
-                          <tr><th>Company</th><th>Role</th></tr>
-                        </thead>
-                        <tbody>${rejectedRows}</tbody>
-                      </table>`
-                    : `<div class="muted">No applications marked as rejected.</div>`
-                }
-              </td>
-            </tr>
-          </table>
-        </div>
+              ${coachBlock ? `<!-- Momentum / Coach -->${coachBlock}` : ""}
 
-        <div style="height:14px;"></div>
-        <div class="section-title">Moved to Next Steps <span class="count muted-count">${movedTotal}</span></div>
-        ${
-          movedTotal
-            ? `<table class="card">
-                <tr><td>
-                  <table class="tbl">
-                    <thead>
-                      <tr><th>Stage</th><th>Company</th><th>Role</th></tr>
-                    </thead>
-                    <tbody>${movedRows}</tbody>
-                  </table>
-                </td></tr>
-              </table>`
-            : `<div class="muted">No stage transitions into Screening/Interview/Offer today.</div>`
-        }
+              ${actionItems.length > 0 ? `
+              <!-- Action Items -->
+              <table cellpadding="0" cellspacing="0" border="0" width="100%" style="border-collapse:collapse;">
+                <tr>
+                  <td style="padding:28px 40px 16px;">
+                    <div style="font-family:'Courier New',monospace;font-size:10px;font-weight:400;color:${COLORS.accentGold};letter-spacing:3px;text-transform:uppercase;margin-bottom:16px;">✦ ACTION ITEMS</div>
+                    <table cellpadding="0" cellspacing="0" border="0" width="100%">${actionItemRows}</table>
+                  </td>
+                </tr>
+              </table>
+              ` : ""}
 
-        <div style="height:14px;"></div>
-        <div class="section-title">Follow-ups & Events (Next Window)</div>
-        <div class="two">
-          <table class="card">
-            <tr><td class="card-title">Follow-up Reminders</td></tr>
-            <tr><td>
-              ${
-                data.followUps.length
-                  ? `<table class="tbl">
+              <!-- Section Divider -->
+              <table cellpadding="0" cellspacing="0" border="0" width="100%">
+                <tr>
+                  <td style="padding:0 40px;">
+                    <div style="height:1px;background:${SECTION_DIVIDER};"></div>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- Rejections Section -->
+              <table cellpadding="0" cellspacing="0" border="0" width="100%" style="border-collapse:collapse;">
+                <tr>
+                  <td style="padding:28px 40px 24px;">
+                    <div style="font-family:'Courier New',monospace;font-size:10px;font-weight:400;color:${COLORS.accentRed};letter-spacing:3px;text-transform:uppercase;margin-bottom:16px;">✕ REJECTIONS</div>
+                    ${data.rejected.length ? `
+                    <table cellpadding="0" cellspacing="0" border="0" width="100%" style="border-collapse:collapse;">
                       <thead>
-                        <tr><th>Company</th><th>Role</th><th>Status</th><th>Due</th><th>Prep</th></tr>
+                        <tr>
+                          <th align="left" style="font-family:'Courier New',monospace;font-size:10px;font-weight:400;color:${COLORS.textGhost};letter-spacing:1px;text-transform:uppercase;padding-bottom:8px;border-bottom:1px solid ${COLORS.borderRow};">COMPANY</th>
+                          <th align="left" style="font-family:'Courier New',monospace;font-size:10px;font-weight:400;color:${COLORS.textGhost};letter-spacing:1px;text-transform:uppercase;padding-bottom:8px;border-bottom:1px solid ${COLORS.borderRow};">ROLE</th>
+                        </tr>
+                      </thead>
+                      <tbody>${rejectedRows}</tbody>
+                    </table>
+                    ` : `<div style="font-family:Georgia,serif;font-size:14px;color:${COLORS.textTertiary};">No applications marked as rejected today.</div>`}
+                  </td>
+                </tr>
+              </table>
+
+              <!-- Section Divider -->
+              <table cellpadding="0" cellspacing="0" border="0" width="100%">
+                <tr>
+                  <td style="padding:0 40px;">
+                    <div style="height:1px;background:${SECTION_DIVIDER};"></div>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- Applied Section -->
+              <table cellpadding="0" cellspacing="0" border="0" width="100%" style="border-collapse:collapse;">
+                <tr>
+                  <td style="padding:28px 40px 24px;">
+                    <div style="font-family:'Courier New',monospace;font-size:10px;font-weight:400;color:${COLORS.accentGold};letter-spacing:3px;text-transform:uppercase;margin-bottom:16px;">→ APPLIED</div>
+                    ${data.applied.length ? `
+                    <table cellpadding="0" cellspacing="0" border="0" width="100%" style="border-collapse:collapse;">
+                      <thead>
+                        <tr>
+                          <th align="left" style="font-family:'Courier New',monospace;font-size:10px;font-weight:400;color:${COLORS.textGhost};letter-spacing:1px;text-transform:uppercase;padding-bottom:8px;border-bottom:1px solid ${COLORS.borderRow};">COMPANY</th>
+                          <th align="left" style="font-family:'Courier New',monospace;font-size:10px;font-weight:400;color:${COLORS.textGhost};letter-spacing:1px;text-transform:uppercase;padding-bottom:8px;border-bottom:1px solid ${COLORS.borderRow};">ROLE</th>
+                          <th align="right" style="font-family:'Courier New',monospace;font-size:10px;font-weight:400;color:${COLORS.textGhost};letter-spacing:1px;text-transform:uppercase;padding-bottom:8px;border-bottom:1px solid ${COLORS.borderRow};">APPLIED</th>
+                        </tr>
+                      </thead>
+                      <tbody>${appliedRows}</tbody>
+                    </table>
+                    ` : `<div style="font-family:Georgia,serif;font-size:14px;color:${COLORS.textTertiary};">No new applications marked as applied today.</div>`}
+                  </td>
+                </tr>
+              </table>
+
+              ${movedTotal ? `
+              <!-- Section Divider -->
+              <table cellpadding="0" cellspacing="0" border="0" width="100%">
+                <tr>
+                  <td style="padding:0 40px;">
+                    <div style="height:1px;background:${SECTION_DIVIDER};"></div>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- Moved Section -->
+              <table cellpadding="0" cellspacing="0" border="0" width="100%" style="border-collapse:collapse;">
+                <tr>
+                  <td style="padding:28px 40px 24px;">
+                    <div style="font-family:'Courier New',monospace;font-size:10px;font-weight:400;color:${COLORS.accentGold};letter-spacing:3px;text-transform:uppercase;margin-bottom:16px;">✦ MOVED TO NEXT STEPS</div>
+                    <table cellpadding="0" cellspacing="0" border="0" width="100%" style="border-collapse:collapse;">
+                      <thead>
+                        <tr>
+                          <th align="left" style="font-family:'Courier New',monospace;font-size:10px;font-weight:400;color:${COLORS.textGhost};letter-spacing:1px;text-transform:uppercase;padding-bottom:8px;border-bottom:1px solid ${COLORS.borderRow};">STAGE</th>
+                          <th align="left" style="font-family:'Courier New',monospace;font-size:10px;font-weight:400;color:${COLORS.textGhost};letter-spacing:1px;text-transform:uppercase;padding-bottom:8px;border-bottom:1px solid ${COLORS.borderRow};">COMPANY</th>
+                          <th align="left" style="font-family:'Courier New',monospace;font-size:10px;font-weight:400;color:${COLORS.textGhost};letter-spacing:1px;text-transform:uppercase;padding-bottom:8px;border-bottom:1px solid ${COLORS.borderRow};">ROLE</th>
+                        </tr>
+                      </thead>
+                      <tbody>${movedRows}</tbody>
+                    </table>
+                  </td>
+                </tr>
+              </table>
+              ` : ""}
+
+              ${(data.followUps.length > 0 || data.scheduledEvents.length > 0) ? `
+              <!-- Section Divider -->
+              <table cellpadding="0" cellspacing="0" border="0" width="100%">
+                <tr>
+                  <td style="padding:0 40px;">
+                    <div style="height:1px;background:${SECTION_DIVIDER};"></div>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- Follow-ups & Events -->
+              <table cellpadding="0" cellspacing="0" border="0" width="100%" style="border-collapse:collapse;">
+                <tr>
+                  <td style="padding:28px 40px 24px;">
+                    ${data.followUps.length > 0 ? `
+                    <div style="font-family:'Courier New',monospace;font-size:10px;font-weight:400;color:${COLORS.accentGold};letter-spacing:3px;text-transform:uppercase;margin-bottom:16px;">✦ FOLLOW-UPS</div>
+                    <table cellpadding="0" cellspacing="0" border="0" width="100%" style="border-collapse:collapse;margin-bottom:20px;">
+                      <thead>
+                        <tr>
+                          <th align="left" style="font-family:'Courier New',monospace;font-size:10px;font-weight:400;color:${COLORS.textGhost};letter-spacing:1px;text-transform:uppercase;padding-bottom:8px;border-bottom:1px solid ${COLORS.borderRow};">COMPANY</th>
+                          <th align="left" style="font-family:'Courier New',monospace;font-size:10px;font-weight:400;color:${COLORS.textGhost};letter-spacing:1px;text-transform:uppercase;padding-bottom:8px;border-bottom:1px solid ${COLORS.borderRow};">ROLE</th>
+                          <th align="left" style="font-family:'Courier New',monospace;font-size:10px;font-weight:400;color:${COLORS.textGhost};letter-spacing:1px;text-transform:uppercase;padding-bottom:8px;border-bottom:1px solid ${COLORS.borderRow};">STATUS</th>
+                          <th align="right" style="font-family:'Courier New',monospace;font-size:10px;font-weight:400;color:${COLORS.textGhost};letter-spacing:1px;text-transform:uppercase;padding-bottom:8px;border-bottom:1px solid ${COLORS.borderRow};">DUE</th>
+                          <th align="left" style="font-family:'Courier New',monospace;font-size:10px;font-weight:400;color:${COLORS.textGhost};letter-spacing:1px;text-transform:uppercase;padding-bottom:8px;border-bottom:1px solid ${COLORS.borderRow};">PREP</th>
+                        </tr>
                       </thead>
                       <tbody>${followUpRows}</tbody>
-                    </table>`
-                  : `<div class="muted">No follow-up reminders due in the next window.</div>`
-              }
-            </td></tr>
-          </table>
-
-          <table class="card">
-            <tr><td class="card-title">Scheduled Events</td></tr>
-            <tr><td>
-              ${
-                data.scheduledEvents.length
-                  ? `<table class="tbl">
+                    </table>
+                    ` : ""}
+                    ${data.scheduledEvents.length > 0 ? `
+                    <div style="font-family:'Courier New',monospace;font-size:10px;font-weight:400;color:${COLORS.accentGold};letter-spacing:3px;text-transform:uppercase;margin-bottom:16px;">✦ SCHEDULED EVENTS</div>
+                    <table cellpadding="0" cellspacing="0" border="0" width="100%" style="border-collapse:collapse;">
                       <thead>
-                        <tr><th>Event</th><th>Company</th><th>Role</th><th>When</th><th>Status</th><th>Prep</th></tr>
+                        <tr>
+                          <th align="left" style="font-family:'Courier New',monospace;font-size:10px;font-weight:400;color:${COLORS.textGhost};letter-spacing:1px;text-transform:uppercase;padding-bottom:8px;border-bottom:1px solid ${COLORS.borderRow};">EVENT</th>
+                          <th align="left" style="font-family:'Courier New',monospace;font-size:10px;font-weight:400;color:${COLORS.textGhost};letter-spacing:1px;text-transform:uppercase;padding-bottom:8px;border-bottom:1px solid ${COLORS.borderRow};">COMPANY</th>
+                          <th align="left" style="font-family:'Courier New',monospace;font-size:10px;font-weight:400;color:${COLORS.textGhost};letter-spacing:1px;text-transform:uppercase;padding-bottom:8px;border-bottom:1px solid ${COLORS.borderRow};">ROLE</th>
+                          <th align="right" style="font-family:'Courier New',monospace;font-size:10px;font-weight:400;color:${COLORS.textGhost};letter-spacing:1px;text-transform:uppercase;padding-bottom:8px;border-bottom:1px solid ${COLORS.borderRow};">WHEN</th>
+                          <th align="left" style="font-family:'Courier New',monospace;font-size:10px;font-weight:400;color:${COLORS.textGhost};letter-spacing:1px;text-transform:uppercase;padding-bottom:8px;border-bottom:1px solid ${COLORS.borderRow};">STATUS</th>
+                          <th align="left" style="font-family:'Courier New',monospace;font-size:10px;font-weight:400;color:${COLORS.textGhost};letter-spacing:1px;text-transform:uppercase;padding-bottom:8px;border-bottom:1px solid ${COLORS.borderRow};">PREP</th>
+                        </tr>
                       </thead>
                       <tbody>${scheduledEventRows}</tbody>
-                    </table>`
-                  : `<div class="muted">No scheduled events in the next window.</div>`
-              }
-            </td></tr>
-          </table>
-        </div>
+                    </table>
+                    ` : ""}
+                  </td>
+                </tr>
+              </table>
+              ` : ""}
 
-        <div style="height:12px;"></div>
-        <div class="tip">
-          Tip: If a follow-up shows “Prep: Not generated yet”, open the application and generate the prep once to get a better email draft tomorrow.
-        </div>
-      </div>
+              <!-- Tip Block -->
+              <table cellpadding="0" cellspacing="0" border="0" width="100%" style="border-collapse:collapse;">
+                <tr>
+                  <td style="padding:24px 40px 32px;">
+                    <table cellpadding="0" cellspacing="0" border="0" width="100%" style="background:${COLORS.bgRowHighlight};border-left:3px solid ${COLORS.accentGold};border-radius:2px;">
+                      <tr>
+                        <td style="padding:14px 18px;">
+                          <div style="font-family:'Courier New',monospace;font-size:10px;color:${COLORS.accentGold};letter-spacing:2px;text-transform:uppercase;margin-bottom:6px;">💡 TIP</div>
+                          <div style="font-family:Georgia,serif;font-size:13px;color:#888888;line-height:1.6;">If a follow-up shows "Prep: Not generated yet", open the application and generate the prep once to get a better email draft tomorrow.</div>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
 
-      <style>
-        .header { padding:16px 18px; border-radius:16px; background:linear-gradient(135deg,#dbeafe,#fef3c7); border:1px solid rgba(17,24,39,0.06); }
-        .header-row { display:flex; align-items:center; gap:12px; }
-        .dot { width:12px; height:12px; border-radius:999px; background:#60a5fa; box-shadow:0 0 0 4px rgba(96,165,250,0.25); }
-        .header-title { font-size:18px; font-weight:800; letter-spacing:-0.01em; color:#111827; }
-        .header-sub { margin-top:6px; font-size:13px; color:#374151; }
+              <!-- Footer Band -->
+              <table cellpadding="0" cellspacing="0" border="0" width="100%" style="background:${COLORS.bgFooter};border-top:1px solid ${COLORS.borderCard};">
+                <tr>
+                  <td style="padding:16px 40px;font-family:'Courier New',monospace;font-size:10px;color:${COLORS.textFaint};letter-spacing:1px;text-transform:uppercase;">
+                    DEV JOB BOARD · ${escape(data.reportDateYMD)} · ET
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
 
-        .two { display:block; }
-
-        .card { width:100%; border:1px solid rgba(17,24,39,0.08); background:#ffffff; border-radius:16px; padding:14px; border-collapse:separate; }
-        .hero { background:linear-gradient(135deg, rgba(52,211,153,0.18), rgba(59,130,246,0.16)); border-radius:16px; padding:16px; }
-        .hero-title { font-weight:900; color:#0f172a; margin-bottom:8px; }
-        .hero-body p { margin:8px 0; color:#0f172a; }
-        .hero-bullets { padding-left:18px; margin:10px 0 0; }
-        .hero-bullets li { margin:6px 0; color:#0f172a; }
-
-        .card-title { font-weight:900; letter-spacing:-0.01em; color:#0f172a; padding-bottom:10px; }
-        .count { font-size:20px; font-weight:900; color:#111827; margin-left:8px; }
-        .rejected { color:#fb7185; }
-
-        .tbl { width:100%; border-collapse:collapse; }
-        .tbl th { text-align:left; font-size:12px; color:#334155; font-weight:800; padding:8px 8px; background:#f3f4ff; border-bottom:1px solid rgba(17,24,39,0.06); }
-        .tbl td { padding:8px 8px; border-bottom:1px solid rgba(17,24,39,0.05); font-size:13px; color:#0f172a; vertical-align:top; }
-        .tbl tr:last-child td { border-bottom:none; }
-        .role { color:#2563eb; font-weight:700; }
-        .rejected-role { color:#e11d48; font-weight:700; }
-        .muted { color:#64748b; font-size:13px; }
-        .muted-count { color:#64748b; font-weight:900; }
-        .stage { font-weight:900; }
-        .notes { margin-top:6px; color:#64748b; font-size:12px; }
-
-        .section-title { font-weight:900; color:#0f172a; margin:0 0 8px; font-size:14px; }
-
-        .tip { color:#64748b; font-size:12px; line-height:1.5; }
-
-        @media (min-width: 680px) {
-          .two { display:grid; gap:12px; grid-template-columns:1fr 1fr; }
-        }
-      </style>
-    </body>
-  </html>`;
+        <!-- Accent Bar Bottom -->
+        <div style="height:3px;background:${ACCENT_GRADIENT};border-radius:0 0 4px 4px;"></div>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
 
   return { html, text };
 }
-
