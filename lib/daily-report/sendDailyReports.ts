@@ -294,11 +294,8 @@ export async function sendDailyReportsForNow(): Promise<{ attempted: number; sen
   const now = new Date();
   const reportDateYMD = getTimeZoneDateYMD(now, reportTimeZone);
 
-  // Important: your existing dashboard "today" logic effectively uses a midnight boundary
-  // in the server's timezone (which is UTC on Vercel). To keep daily email stats consistent
-  // with what you see in the app, we use UTC midnight here.
-  const reportStart = new Date(now);
-  reportStart.setUTCHours(0, 0, 0, 0);
+  // Same calendar day as the dashboard: midnight in the report timezone (ET), not UTC.
+  const reportStart = startOfTimeZoneDay(now, reportTimeZone);
   const reportEnd = now;
 
   // "Next window" starting immediately after the email time.
@@ -336,23 +333,22 @@ export async function sendDailyReportsForNow(): Promise<{ attempted: number; sen
     if (!toEmails.length) continue;
 
     // Idempotency: one delivery record per user per reportDate.
-    const deliveryCreate = await prisma.dailyReportDelivery
-      .create({
-        data: {
-          userId,
-          reportDate: reportDateYMD,
-          status: "SENDING",
-          toEmails: toEmails.join(","),
-          sentAt: null,
-          error: null,
-        },
-      })
-      .catch((err) => {
-        // Unique constraint means we already sent/attempted today.
-        return null;
-      });
+    const existing = await prisma.dailyReportDelivery.findUnique({
+      where: { userId_reportDate: { userId, reportDate: reportDateYMD } },
+      select: { id: true },
+    });
+    if (existing) continue;
 
-    if (!deliveryCreate) continue;
+    await prisma.dailyReportDelivery.create({
+      data: {
+        userId,
+        reportDate: reportDateYMD,
+        status: "SENDING",
+        toEmails: toEmails.join(","),
+        sentAt: null,
+        error: null,
+      },
+    });
     attempted++;
 
     try {

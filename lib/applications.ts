@@ -1,12 +1,24 @@
 import { prisma } from "@/lib/db";
 import { EVENT_LABELS, type AppStatus } from "@/types";
-import { endOfLocalDay, parseYMDLocal, startOfLocalDay, toYMDLocal } from "@/lib/date-helpers";
+import { endOfLocalDay, startOfLocalDay, toYMDLocal } from "@/lib/date-helpers";
+import {
+  addCalendarDaysYMD,
+  DEFAULT_REPORT_TIME_ZONE,
+  endOfTimeZoneDay,
+  getTimeZoneDateYMD,
+  getWeekdaySunday0InTimeZone,
+  startOfTimeZoneDay,
+  startOfTimeZoneDayFromYMD,
+  startOfTimeZoneMonth,
+  startOfTimeZoneWeekSunday,
+} from "@/lib/timezone";
 
-function diffDaysLocal(from: Date, to: Date): number {
-  // Convert local calendar dates to UTC-only midnights so day differences
-  // aren't affected by local DST transitions.
-  const [fy, fm, fd] = toYMDLocal(from).split("-").map(Number);
-  const [ty, tm, td] = toYMDLocal(to).split("-").map(Number);
+/** Dashboard stats use ET so hosted (UTC) servers match US Eastern calendar days. */
+const STATS_TZ = DEFAULT_REPORT_TIME_ZONE;
+
+function diffDaysInStatsTZ(from: Date, to: Date): number {
+  const [fy, fm, fd] = getTimeZoneDateYMD(from, STATS_TZ).split("-").map(Number);
+  const [ty, tm, td] = getTimeZoneDateYMD(to, STATS_TZ).split("-").map(Number);
   const fromUTC = Date.UTC(fy, fm - 1, fd);
   const toUTC = Date.UTC(ty, tm - 1, td);
   return (toUTC - fromUTC) / 86400000;
@@ -79,12 +91,9 @@ export async function getActivityByPeriod(userId: string) {
   });
 
   const now = new Date();
-  const todayStart = new Date(now);
-  todayStart.setHours(0, 0, 0, 0);
-  const weekStart = new Date(todayStart);
-  weekStart.setDate(weekStart.getDate() - weekStart.getDay());
-  const monthStart = new Date(todayStart);
-  monthStart.setDate(1);
+  const todayStart = startOfTimeZoneDay(now, STATS_TZ);
+  const weekStart = startOfTimeZoneWeekSunday(now, STATS_TZ);
+  const monthStart = startOfTimeZoneMonth(now, STATS_TZ);
 
   const addTo = (
     acc: Record<string, { today: number; week: number; month: number }>,
@@ -139,23 +148,19 @@ export async function getApplicationStreak(userId: string): Promise<number> {
   const dateSet = new Set<string>();
   for (const a of apps) {
     const d = a.appliedAt ?? a.createdAt;
-    if (d) dateSet.add(toYMDLocal(d));
+    if (d) dateSet.add(getTimeZoneDateYMD(d, STATS_TZ));
   }
   const dates = Array.from(dateSet).sort().reverse();
   if (dates.length === 0) return 0;
 
-  const today = toYMDLocal(new Date());
+  const today = getTimeZoneDateYMD(new Date(), STATS_TZ);
   if (dates[0] !== today) return 0; // Streak only counts when you applied today
 
   let streak = 1;
   for (let i = 1; i < dates.length; i++) {
     const prevYMD = dates[i - 1];
     const currYMD = dates[i];
-    const prevDate = parseYMDLocal(prevYMD);
-    // `dates` is newest -> oldest, so consecutive means "curr is 1 day before prev".
-    const expectedCurr = new Date(prevDate);
-    expectedCurr.setDate(expectedCurr.getDate() - 1);
-    if (toYMDLocal(expectedCurr) === currYMD) streak++;
+    if (addCalendarDaysYMD(currYMD, 1) === prevYMD) streak++;
     else break;
   }
   return streak;
@@ -177,9 +182,8 @@ export async function getWeeklyApplications(userId: string) {
   const weeks: Record<string, number> = {};
   for (const app of apps) {
     const d = app.createdAt;
-    const weekStart = new Date(d);
-    weekStart.setDate(weekStart.getDate() - weekStart.getDay());
-    const key = toYMDLocal(weekStart);
+    const weekStart = startOfTimeZoneWeekSunday(d, STATS_TZ);
+    const key = getTimeZoneDateYMD(weekStart, STATS_TZ);
     weeks[key] = (weeks[key] || 0) + 1;
   }
 
@@ -216,7 +220,7 @@ export async function getAdvancedStats(userId: string) {
   const responseDays: number[] = [];
   for (const a of screened) {
     const from = a.appliedAt ?? a.createdAt;
-    const diff = diffDaysLocal(from, a.updatedAt);
+    const diff = diffDaysInStatsTZ(from, a.updatedAt);
     if (diff >= 0) responseDays.push(Math.round(diff));
   }
   const avgDaysToResponse =
@@ -273,7 +277,7 @@ export async function getAdvancedStats(userId: string) {
   const dayOfWeekResponses = [0, 0, 0, 0, 0, 0, 0];
   for (const a of apps) {
     const date = a.appliedAt ?? a.createdAt;
-    const day = date.getDay();
+    const day = getWeekdaySunday0InTimeZone(date, STATS_TZ);
     dayOfWeekCounts[day]++;
     if (["SCREENING", "INTERVIEW", "OFFER"].includes(a.status)) {
       dayOfWeekResponses[day]++;
@@ -400,7 +404,7 @@ export async function getAdvancedStats(userId: string) {
   // Daily activity for heatmap
   const dailyActivity: Record<string, number> = {};
   for (const a of apps) {
-    const key = toYMDLocal(a.createdAt);
+    const key = getTimeZoneDateYMD(a.createdAt, STATS_TZ);
     dailyActivity[key] = (dailyActivity[key] || 0) + 1;
   }
 
@@ -422,9 +426,10 @@ export async function getAdvancedStats(userId: string) {
 }
 
 export async function getFollowUpReminders(userId: string) {
-  const tomorrow = new Date();
-  tomorrow.setDate(tomorrow.getDate() + 1);
-  tomorrow.setHours(23, 59, 59, 999);
+  const todayYmd = getTimeZoneDateYMD(new Date(), STATS_TZ);
+  const tomorrowYmd = addCalendarDaysYMD(todayYmd, 1);
+  const tomorrowStart = startOfTimeZoneDayFromYMD(tomorrowYmd, STATS_TZ);
+  const tomorrow = endOfTimeZoneDay(tomorrowStart, STATS_TZ);
 
   return prisma.application.findMany({
     where: {
@@ -443,13 +448,12 @@ export async function getFollowUpReminders(userId: string) {
 }
 
 export async function getOverdueCount(userId: string) {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  const todayStart = startOfTimeZoneDay(new Date(), STATS_TZ);
 
   return prisma.application.count({
     where: {
       userId,
-      followUpDate: { lte: today },
+      followUpDate: { lte: todayStart },
       status: { in: ["APPLIED", "SCREENING"] },
     },
   });

@@ -22,6 +22,61 @@ function parseYMD(ymd: string): { y: number; m: number; d: number } {
   return { y: Number(m[1]), m: Number(m[2]), d: Number(m[3]) };
 }
 
+function pad2(n: number): string {
+  return String(n).padStart(2, "0");
+}
+
+/** Gregorian calendar add/subtract days on a `YYYY-MM-DD` string (timezone-agnostic wall date). */
+export function addCalendarDaysYMD(ymd: string, deltaDays: number): string {
+  const { y, m, d } = parseYMD(ymd);
+  const x = new Date(Date.UTC(y, m - 1, d));
+  x.setUTCDate(x.getUTCDate() + deltaDays);
+  return `${x.getUTCFullYear()}-${pad2(x.getUTCMonth() + 1)}-${pad2(x.getUTCDate())}`;
+}
+
+const WEEKDAYS_LONG = [
+  "Sunday",
+  "Monday",
+  "Tuesday",
+  "Wednesday",
+  "Thursday",
+  "Friday",
+  "Saturday",
+] as const;
+
+/** 0 = Sunday, matching `Date#getDay()`. */
+export function getWeekdaySunday0InTimeZone(date: Date, timeZone: string): number {
+  const long = new Intl.DateTimeFormat("en-US", { timeZone, weekday: "long" }).format(date);
+  const idx = WEEKDAYS_LONG.indexOf(long as (typeof WEEKDAYS_LONG)[number]);
+  if (idx < 0) throw new Error(`Unexpected weekday: ${long}`);
+  return idx;
+}
+
+export function startOfTimeZoneDayFromYMD(ymd: string, timeZone: string): Date {
+  const { y, m, d } = parseYMD(ymd);
+  return zonedTimeToUtc(timeZone, y, m, d, 0, 0, 0);
+}
+
+/** Start of the Sunday-based week containing `date` in `timeZone`. */
+export function startOfTimeZoneWeekSunday(date: Date, timeZone: string): Date {
+  const ymd = getTimeZoneDateYMD(date, timeZone);
+  const wd = getWeekdaySunday0InTimeZone(date, timeZone);
+  const weekStartYmd = addCalendarDaysYMD(ymd, -wd);
+  return startOfTimeZoneDayFromYMD(weekStartYmd, timeZone);
+}
+
+export function startOfTimeZoneMonth(date: Date, timeZone: string): Date {
+  const ymd = getTimeZoneDateYMD(date, timeZone);
+  return startOfTimeZoneDayFromYMD(`${ymd.slice(0, 7)}-01`, timeZone);
+}
+
+/** Last millisecond of the calendar day containing `date` in `timeZone`. */
+export function endOfTimeZoneDay(date: Date, timeZone: string): Date {
+  const ymd = getTimeZoneDateYMD(date, timeZone);
+  const nextYmd = addCalendarDaysYMD(ymd, 1);
+  return new Date(startOfTimeZoneDayFromYMD(nextYmd, timeZone).getTime() - 1);
+}
+
 function getTimeZoneOffsetMs(timeZone: string, date: Date): number {
   // Computes: (local time for `date` in `timeZone`) - (UTC time for `date`) in ms.
   const dtf = new Intl.DateTimeFormat("en-US", {
