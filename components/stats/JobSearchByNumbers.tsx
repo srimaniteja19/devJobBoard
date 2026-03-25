@@ -162,13 +162,23 @@ export default function JobSearchByNumbers({
     return "Keep logging moves on the board—this view updates live.";
   }, [data]);
 
-  const tooltipBg = "rgba(12, 12, 16, 0.92)";
+  const tooltipText = "rgba(255, 255, 255, 0.92)";
   const tooltipStyle = {
-    backgroundColor: tooltipBg,
-    border: "1px solid rgba(255,255,255,0.1)",
+    backgroundColor: "rgba(12, 12, 16, 0.95)",
+    border: "1px solid rgba(255,255,255,0.12)",
     borderRadius: "8px",
     fontSize: 11,
-    color: "rgba(255,255,255,0.88)",
+    color: tooltipText,
+  };
+  /** Recharts defaults item/label text to dark; these override for dark tooltip UI. */
+  const tooltipLabelStyle = {
+    color: tooltipText,
+    fontWeight: 600,
+    marginBottom: 4,
+  };
+  const tooltipItemStyle = {
+    color: tooltipText,
+    paddingTop: 2,
   };
 
   const hasChart = chartData.some((d) => d.count > 0);
@@ -366,6 +376,10 @@ export default function JobSearchByNumbers({
                         />
                         <Tooltip
                           contentStyle={tooltipStyle}
+                          labelStyle={tooltipLabelStyle}
+                          itemStyle={tooltipItemStyle}
+                          wrapperStyle={{ outline: "none" }}
+                          formatter={(value) => [String(value ?? "—"), "Applications"]}
                           cursor={{ fill: "rgba(255,255,255,0.04)" }}
                         />
                         <Bar dataKey="count" radius={[5, 5, 0, 0]} maxBarSize={36}>
