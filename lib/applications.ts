@@ -560,3 +560,307 @@ export async function getCalendarItems(
 
   return items.sort((a, b) => a.date.localeCompare(b.date) || a.title.localeCompare(b.title));
 }
+
+/** Outcome row for the “Job search by the numbers” dashboard (Application outcomes bars). */
+export type JobSearchOutcomeRow = {
+  key: string;
+  label: string;
+  emoji: string;
+  count: number;
+  pct: number;
+};
+
+export type JobSearchReferralRow = {
+  id: string;
+  company: string;
+  role: string;
+  contactCount: number;
+};
+
+export type JobSearchByNumbersData = {
+  daysSearching: number | null;
+  daysSearchingNote: string;
+  totalApplications: number;
+  applicationsNote: string;
+  interviewCycles: number;
+  interviewCyclesNote: string;
+  silentRejectionsPct: number;
+  silentRejectionsNote: string;
+  offersReceived: number;
+  offersReceivedNote: string;
+  offersDeclined: number;
+  offersDeclinedNote: string;
+  outcomes: JobSearchOutcomeRow[];
+  monthlyVelocity: { key: string; label: string; count: number }[];
+  velocitySubtitle: string;
+  referrals: JobSearchReferralRow[];
+};
+
+function ymFromDateInTz(date: Date, tz: string): string {
+  return getTimeZoneDateYMD(date, tz).slice(0, 7);
+}
+
+function prevCalendarMonthYM(ym: string): string {
+  const y = Number(ym.slice(0, 4));
+  const m = Number(ym.slice(5, 7));
+  if (m === 1) return `${y - 1}-12`;
+  return `${y}-${String(m - 1).padStart(2, "0")}`;
+}
+
+function monthShortLabelFromYm(ym: string, tz: string): string {
+  const d = startOfTimeZoneDayFromYMD(`${ym}-01`, tz);
+  return new Intl.DateTimeFormat("en-US", { month: "short", timeZone: tz }).format(d);
+}
+
+function monthsSpanInclusive(minYm: string | null, maxYm: string | null): number {
+  if (!minYm || !maxYm) return 0;
+  const ay = Number(minYm.slice(0, 4));
+  const am = Number(minYm.slice(5, 7));
+  const by = Number(maxYm.slice(0, 4));
+  const bm = Number(maxYm.slice(5, 7));
+  return (by - ay) * 12 + (bm - am) + 1;
+}
+
+/**
+ * Aggregates metrics for the “Job search by the numbers” analytics block on Stats.
+ * Uses the same reporting timezone as other dashboard stats (ET).
+ */
+export async function getJobSearchByNumbersData(userId: string): Promise<JobSearchByNumbersData> {
+  const tz = STATS_TZ;
+  const now = new Date();
+
+  const [apps, history, referralApps] = await Promise.all([
+    prisma.application.findMany({
+      where: { userId },
+      select: {
+        id: true,
+        status: true,
+        appliedAt: true,
+        createdAt: true,
+      },
+    }),
+    prisma.applicationStatusHistory.findMany({
+      where: { application: { userId } },
+      select: { applicationId: true, fromStatus: true, toStatus: true, changedAt: true },
+      orderBy: { changedAt: "asc" },
+    }),
+    prisma.application.findMany({
+      where: { userId, contacts: { some: {} } },
+      select: {
+        id: true,
+        company: true,
+        role: true,
+        _count: { select: { contacts: true } },
+      },
+      orderBy: { updatedAt: "desc" },
+      take: 40,
+    }),
+  ]);
+
+  const visited = new Map<string, Set<string>>();
+  const firstOfferDateByApp = new Map<string, Date>();
+  const declinedOfferApps = new Set<string>();
+
+  for (const h of history) {
+    let set = visited.get(h.applicationId);
+    if (!set) {
+      set = new Set<string>();
+      visited.set(h.applicationId, set);
+    }
+    if (h.fromStatus) set.add(h.fromStatus);
+    set.add(h.toStatus);
+    if (h.toStatus === "OFFER" && !firstOfferDateByApp.has(h.applicationId)) {
+      firstOfferDateByApp.set(h.applicationId, h.changedAt);
+    }
+    if (h.fromStatus === "OFFER" && h.toStatus !== "OFFER") {
+      declinedOfferApps.add(h.applicationId);
+    }
+  }
+
+  const reachedInterview = (appId: string): boolean => {
+    const s = visited.get(appId);
+    if (!s) return false;
+    return s.has("INTERVIEW") || s.has("OFFER");
+  };
+
+  const pipeline = apps.filter((a) => a.status !== "WISHLIST");
+  const totalApplications = pipeline.length;
+
+  let noResponse = 0;
+  let rejectedNoInterview = 0;
+  let interviewedRejected = 0;
+  let inProgress = 0;
+  let offered = 0;
+
+  for (const a of pipeline) {
+    const st = a.status;
+    if (st === "OFFER") {
+      offered++;
+      continue;
+    }
+    if (st === "GHOSTED") {
+      noResponse++;
+      continue;
+    }
+    if (st === "REJECTED") {
+      if (reachedInterview(a.id)) interviewedRejected++;
+      else rejectedNoInterview++;
+      continue;
+    }
+    if (st === "APPLIED" || st === "SCREENING" || st === "INTERVIEW") {
+      inProgress++;
+    }
+  }
+
+  const outcomeRowsRaw: {
+    key: string;
+    label: string;
+    emoji: string;
+    count: number;
+  }[] = [
+    { key: "no_response", label: "No response", emoji: "👻", count: noResponse },
+    { key: "rejected", label: "Rejected", emoji: "🚪", count: rejectedNoInterview },
+    {
+      key: "interview_rejected",
+      label: "Interviewed & rejected",
+      emoji: "🎭",
+      count: interviewedRejected,
+    },
+    {
+      key: "in_progress",
+      label: "In progress",
+      emoji: "⏳",
+      count: inProgress,
+    },
+    { key: "offered", label: "Interviewed & offered", emoji: "🌈", count: offered },
+  ];
+
+  const denom = totalApplications > 0 ? totalApplications : 1;
+  const outcomes: JobSearchOutcomeRow[] = outcomeRowsRaw.map((r) => ({
+    ...r,
+    pct: Math.round((r.count / denom) * 100),
+  }));
+
+  const interviewCycles = pipeline.filter((a) => reachedInterview(a.id)).length;
+
+  const ghosted = pipeline.filter((a) => a.status === "GHOSTED").length;
+  const silentRejectionsPct =
+    totalApplications > 0 ? Math.round((ghosted / totalApplications) * 100) : 0;
+
+  const offerAppIdsEver = new Set<string>();
+  for (const h of history) {
+    if (h.toStatus === "OFFER") offerAppIdsEver.add(h.applicationId);
+  }
+  for (const a of pipeline) {
+    if (a.status === "OFFER") offerAppIdsEver.add(a.id);
+  }
+  const offersReceived = offerAppIdsEver.size;
+  const offersActive = pipeline.filter((a) => a.status === "OFFER").length;
+  const offersDeclined = declinedOfferApps.size;
+
+  const appliedDates = pipeline
+    .map((a) => a.appliedAt ?? a.createdAt)
+    .filter((d): d is Date => Boolean(d));
+  let daysSearching: number | null = null;
+  let daysSearchingNote = "Add applications to see this timeline";
+  if (appliedDates.length > 0) {
+    const searchStart = new Date(Math.min(...appliedDates.map((d) => d.getTime())));
+    const offerDates = Array.from(firstOfferDateByApp.values());
+    const end =
+      offerDates.length > 0
+        ? new Date(Math.min(...offerDates.map((d) => d.getTime())))
+        : now;
+    const d = diffDaysInStatsTZ(searchStart, end);
+    daysSearching = Math.max(0, d);
+    daysSearchingNote =
+      offerDates.length > 0 ? "First application → first offer" : "First application → today";
+  }
+
+  let minYm: string | null = null;
+  let maxYm: string | null = null;
+  for (const a of pipeline) {
+    const d = a.appliedAt ?? a.createdAt;
+    const ym = ymFromDateInTz(d, tz);
+    if (!minYm || ym < minYm) minYm = ym;
+    if (!maxYm || ym > maxYm) maxYm = ym;
+  }
+  const spanMonths = monthsSpanInclusive(minYm, maxYm);
+  const applicationsNote =
+    totalApplications === 0
+      ? "Move cards out of wishlist to track"
+      : spanMonths <= 1
+        ? "last month or newer"
+        : `across ${spanMonths} months`;
+
+  const interviewCyclesNote =
+    interviewCycles === 0
+      ? "Reach interview on the board to see this"
+      : interviewCycles === 1
+        ? "1 role reached interview"
+        : `across ${interviewCycles} roles`;
+
+  const referrals: JobSearchReferralRow[] = referralApps.map((a) => ({
+    id: a.id,
+    company: a.company,
+    role: a.role,
+    contactCount: a._count.contacts,
+  }));
+
+  const curYm = getTimeZoneDateYMD(now, tz).slice(0, 7);
+  const monthKeys: string[] = [];
+  let ymCursor = curYm;
+  for (let i = 0; i < 12; i++) {
+    monthKeys.unshift(ymCursor);
+    ymCursor = prevCalendarMonthYM(ymCursor);
+  }
+
+  const monthCounts = new Map<string, number>();
+  for (const k of monthKeys) monthCounts.set(k, 0);
+  for (const a of pipeline) {
+    const d = a.appliedAt ?? a.createdAt;
+    const k = ymFromDateInTz(d, tz);
+    if (monthCounts.has(k)) monthCounts.set(k, (monthCounts.get(k) ?? 0) + 1);
+  }
+
+  const monthlyVelocity = monthKeys.map((key) => ({
+    key,
+    label: monthShortLabelFromYm(key, tz),
+    count: monthCounts.get(key) ?? 0,
+  }));
+
+  let velocitySubtitle = "Applications per month (ET)";
+  let peak = monthlyVelocity[0];
+  for (const m of monthlyVelocity) {
+    if (m.count > peak.count) peak = m;
+  }
+  if (peak && peak.count > 0) {
+    velocitySubtitle = `Peak hustle: ${peak.label} at ${peak.count} apps`;
+  }
+
+  return {
+    daysSearching,
+    daysSearchingNote,
+    totalApplications,
+    applicationsNote,
+    interviewCycles,
+    interviewCyclesNote,
+    silentRejectionsPct,
+    silentRejectionsNote: totalApplications > 0 ? "no company response (ghosted)" : "—",
+    offersReceived,
+    offersReceivedNote:
+      offersReceived === 0
+        ? "Move a card to Offer to track"
+        : offersActive === offersReceived
+          ? `${offersActive} active on the board`
+          : `${offersActive} active · ${offersReceived} total with an offer`,
+    offersDeclined,
+    offersDeclinedNote:
+      offersDeclined === 0
+        ? "Logged when status moves off Offer"
+        : "roles where you left the offer stage",
+    outcomes,
+    monthlyVelocity,
+    velocitySubtitle,
+    referrals,
+  };
+}

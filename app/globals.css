@@ -72,6 +72,10 @@
   --dash-reminder-today: #ea580c;
   --dash-reminder-upcoming: #059669;
   --dash-reminder-badge-bg: rgba(220,38,38,0.15);
+  /* Stats “by the numbers” — minimal mono accents (optional hooks) */
+  --stats-shade-bar: color-mix(in srgb, var(--color-t-primary) 14%, transparent);
+  --stats-shade-fill: color-mix(in srgb, var(--color-t-primary) 22%, transparent);
+  --stats-shade-line: color-mix(in srgb, var(--color-t-primary) 45%, transparent);
 }
 
 /* Dark theme */
@@ -141,6 +145,9 @@
   --dash-reminder-today: #fb923c;
   --dash-reminder-upcoming: #34d399;
   --dash-reminder-badge-bg: rgba(248,113,113,0.2);
+  --stats-shade-bar: color-mix(in srgb, var(--color-t-primary) 18%, transparent);
+  --stats-shade-fill: color-mix(in srgb, var(--color-t-primary) 28%, transparent);
+  --stats-shade-line: color-mix(in srgb, var(--color-t-primary) 55%, transparent);
 }
 
 @layer base {

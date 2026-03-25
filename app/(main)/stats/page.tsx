@@ -4,18 +4,21 @@ import {
   getApplicationStats,
   getWeeklyApplications,
   getAdvancedStats,
+  getJobSearchByNumbersData,
 } from "@/lib/applications";
 import StatsCharts from "@/components/stats/StatsCharts";
 import BlindSpotDetector from "@/components/stats/BlindSpotDetector";
+import JobSearchByNumbers from "@/components/stats/JobSearchByNumbers";
 
 export default async function StatsPage() {
   const user = await getCurrentUser();
   if (!user) redirect("/login");
 
-  const [stats, weekly, advanced] = await Promise.all([
+  const [stats, weekly, advanced, byNumbers] = await Promise.all([
     getApplicationStats(user.id),
     getWeeklyApplications(user.id),
     getAdvancedStats(user.id),
+    getJobSearchByNumbersData(user.id),
   ]);
 
   return (
@@ -26,6 +29,8 @@ export default async function StatsPage() {
           Insights into your job search
         </p>
       </div>
+
+      <JobSearchByNumbers data={byNumbers} resumeBreakdown={advanced.resumeBreakdown} />
 
       <div className="mb-6">
         <BlindSpotDetector />
