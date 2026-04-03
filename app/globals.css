@@ -1,5 +1,6 @@
 @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@1&family=DM+Sans:wght@300;400;500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,500;0,600;1,500;1,600&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -76,60 +77,6 @@
   --stats-shade-bar: color-mix(in srgb, var(--color-t-primary) 14%, transparent);
   --stats-shade-fill: color-mix(in srgb, var(--color-t-primary) 22%, transparent);
   --stats-shade-line: color-mix(in srgb, var(--color-t-primary) 45%, transparent);
-  /* Schedule — pastel glass (light): translucent fills + soft accents */
-  --schedule-card-float: 0 14px 44px -12px rgba(109, 40, 217, 0.09),
-    0 6px 20px -8px rgba(15, 23, 42, 0.05);
-  --schedule-card-float-hover: 0 22px 56px -14px rgba(109, 40, 217, 0.14),
-    0 12px 32px -10px rgba(15, 23, 42, 0.08);
-  --schedule-day-panel-bg: rgba(255, 255, 255, 0.42);
-  --schedule-day-panel-border: rgba(255, 255, 255, 0.72);
-  --schedule-day-panel-shadow: 0 20px 50px -16px rgba(99, 102, 241, 0.11),
-    0 4px 20px -4px rgba(15, 23, 42, 0.04);
-  --schedule-follow_up-bg: rgba(255, 243, 210, 0.42);
-  --schedule-follow_up-border: rgba(253, 224, 138, 0.55);
-  --schedule-follow_up-accent: #e8b86d;
-  --schedule-follow_up-title: #6b5a42;
-  --schedule-follow_up-muted: #8a7a62;
-  --schedule-follow_up_event-bg: rgba(255, 228, 210, 0.45);
-  --schedule-follow_up_event-border: rgba(254, 205, 170, 0.55);
-  --schedule-follow_up_event-accent: #e9a882;
-  --schedule-follow_up_event-title: #7a5645;
-  --schedule-follow_up_event-muted: #9a7565;
-  --schedule-phone_screen-bg: rgba(204, 246, 255, 0.42);
-  --schedule-phone_screen-border: rgba(165, 243, 252, 0.55);
-  --schedule-phone_screen-accent: #6ec4d6;
-  --schedule-phone_screen-title: #456770;
-  --schedule-phone_screen-muted: #5c7f8a;
-  --schedule-technical-bg: rgba(233, 228, 255, 0.45);
-  --schedule-technical-border: rgba(214, 207, 250, 0.58);
-  --schedule-technical-accent: #a896e8;
-  --schedule-technical-title: #5a5280;
-  --schedule-technical-muted: #7569a0;
-  --schedule-behavioral-bg: rgba(252, 231, 243, 0.45);
-  --schedule-behavioral-border: rgba(249, 196, 224, 0.55);
-  --schedule-behavioral-accent: #e8a0c4;
-  --schedule-behavioral-title: #6f4a5c;
-  --schedule-behavioral-muted: #8a6276;
-  --schedule-onsite-bg: rgba(209, 250, 229, 0.42);
-  --schedule-onsite-border: rgba(167, 243, 208, 0.55);
-  --schedule-onsite-accent: #6dca9f;
-  --schedule-onsite-title: #3d5c4e;
-  --schedule-onsite-muted: #4f7564;
-  --schedule-offer-bg: rgba(220, 252, 231, 0.45);
-  --schedule-offer-border: rgba(187, 247, 208, 0.55);
-  --schedule-offer-accent: #7dd87a;
-  --schedule-offer-title: #3d5c42;
-  --schedule-offer-muted: #567a5a;
-  --schedule-rejection-bg: rgba(254, 226, 226, 0.42);
-  --schedule-rejection-border: rgba(252, 201, 201, 0.55);
-  --schedule-rejection-accent: #e8a0a0;
-  --schedule-rejection-title: #6b4848;
-  --schedule-rejection-muted: #8a6666;
-  --schedule-other-bg: rgba(244, 244, 246, 0.48);
-  --schedule-other-border: rgba(228, 228, 231, 0.65);
-  --schedule-other-accent: #b8b8c4;
-  --schedule-other-title: #52525b;
-  --schedule-other-muted: #73737f;
 }
 
 /* Dark theme */
@@ -202,60 +149,6 @@
   --stats-shade-bar: color-mix(in srgb, var(--color-t-primary) 18%, transparent);
   --stats-shade-fill: color-mix(in srgb, var(--color-t-primary) 28%, transparent);
   --stats-shade-line: color-mix(in srgb, var(--color-t-primary) 55%, transparent);
-  /* Schedule — pastel glass (dark): frosted panels on deep gradient */
-  --schedule-card-float: 0 16px 48px -8px rgba(0, 0, 0, 0.55),
-    inset 0 1px 0 rgba(255, 255, 255, 0.06);
-  --schedule-card-float-hover: 0 24px 56px -10px rgba(0, 0, 0, 0.6),
-    inset 0 1px 0 rgba(255, 255, 255, 0.08);
-  --schedule-day-panel-bg: rgba(28, 24, 48, 0.5);
-  --schedule-day-panel-border: rgba(255, 255, 255, 0.1);
-  --schedule-day-panel-shadow: 0 20px 50px -12px rgba(0, 0, 0, 0.45),
-    inset 0 1px 0 rgba(255, 255, 255, 0.05);
-  --schedule-follow_up-bg: rgba(251, 191, 36, 0.1);
-  --schedule-follow_up-border: rgba(253, 224, 138, 0.22);
-  --schedule-follow_up-accent: #f3d38a;
-  --schedule-follow_up-title: #f5e5c0;
-  --schedule-follow_up-muted: #d4c4a0;
-  --schedule-follow_up_event-bg: rgba(251, 146, 60, 0.1);
-  --schedule-follow_up_event-border: rgba(253, 186, 140, 0.22);
-  --schedule-follow_up_event-accent: #f0b88a;
-  --schedule-follow_up_event-title: #f5d4c0;
-  --schedule-follow_up_event-muted: #d4b0a0;
-  --schedule-phone_screen-bg: rgba(34, 211, 238, 0.09);
-  --schedule-phone_screen-border: rgba(103, 232, 249, 0.2);
-  --schedule-phone_screen-accent: #7dd4e8;
-  --schedule-phone_screen-title: #c8eef5;
-  --schedule-phone_screen-muted: #9ec9d4;
-  --schedule-technical-bg: rgba(167, 139, 250, 0.11);
-  --schedule-technical-border: rgba(196, 181, 253, 0.22);
-  --schedule-technical-accent: #c9b8f5;
-  --schedule-technical-title: #e4dcfa;
-  --schedule-technical-muted: #b8aad4;
-  --schedule-behavioral-bg: rgba(244, 114, 182, 0.1);
-  --schedule-behavioral-border: rgba(249, 168, 212, 0.2);
-  --schedule-behavioral-accent: #f0a8d0;
-  --schedule-behavioral-title: #fad4e8;
-  --schedule-behavioral-muted: #d4a8bc;
-  --schedule-onsite-bg: rgba(52, 211, 153, 0.09);
-  --schedule-onsite-border: rgba(110, 231, 183, 0.2);
-  --schedule-onsite-accent: #7ddcb0;
-  --schedule-onsite-title: #c8f0dc;
-  --schedule-onsite-muted: #9ec9b8;
-  --schedule-offer-bg: rgba(74, 222, 128, 0.09);
-  --schedule-offer-border: rgba(134, 239, 172, 0.2);
-  --schedule-offer-accent: #8ee89f;
-  --schedule-offer-title: #d4f5dc;
-  --schedule-offer-muted: #a0d4b0;
-  --schedule-rejection-bg: rgba(248, 113, 113, 0.09);
-  --schedule-rejection-border: rgba(252, 165, 165, 0.2);
-  --schedule-rejection-accent: #f0a8a8;
-  --schedule-rejection-title: #fad4d4;
-  --schedule-rejection-muted: #d4a8a8;
-  --schedule-other-bg: rgba(161, 161, 170, 0.12);
-  --schedule-other-border: rgba(212, 212, 216, 0.18);
-  --schedule-other-accent: #c4c4d0;
-  --schedule-other-title: #e4e4e9;
-  --schedule-other-muted: #a8a8b8;
 }
 
 @layer base {
@@ -315,6 +208,12 @@
   }
   .press {
     @apply active:scale-[0.97] active:duration-100;
+  }
+  .font-schedule-serif {
+    font-family: "Playfair Display", Georgia, "Times New Roman", serif;
+  }
+  .font-schedule-mono {
+    font-family: "JetBrains Mono", ui-monospace, monospace;
   }
 }
 

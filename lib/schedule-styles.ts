@@ -1,5 +1,4 @@
 import type { CalendarItem } from "@/lib/applications";
-import { EVENT_LABELS, type EventType } from "@/types";
 
 export type ScheduleRowKind =
   | "follow_up"
@@ -33,25 +32,4 @@ export function scheduleRowKindFromItem(item: CalendarItem): ScheduleRowKind {
     default:
       return "other";
   }
-}
-
-/** Tokens from globals.css: --schedule-{kind}-* */
-export function scheduleRowPalette(kind: ScheduleRowKind) {
-  const v = (token: string) => `var(--schedule-${kind}-${token})`;
-  return {
-    bg: v("bg"),
-    border: v("border"),
-    accent: v("accent"),
-    title: v("title"),
-    muted: v("muted"),
-  };
-}
-
-export function scheduleKindLabel(item: CalendarItem): string {
-  if (item.type === "follow_up") return "Follow-up";
-  if (item.eventType && item.eventType in EVENT_LABELS) {
-    return EVENT_LABELS[item.eventType as EventType];
-  }
-  if (item.eventType) return item.eventType.replace(/_/g, " ");
-  return "Event";
 }
