@@ -4,9 +4,10 @@ import { useState, useEffect } from "react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { formatDistanceToNowStrict, format } from "date-fns";
-import { GripVertical } from "lucide-react";
+import { CalendarPlus, GripVertical } from "lucide-react";
 import { motion, useReducedMotion } from "framer-motion";
 import type { AppStatus } from "@/types";
+import type { KanbanScheduleHintSerialized } from "@/lib/kanban-schedule";
 
 const STATUS_ACCENT_VAR: Record<AppStatus, string> = {
   WISHLIST: "var(--dash-status-wishlist)",
@@ -34,7 +35,9 @@ interface KanbanCardProps {
   createdAt: string;
   resumeMatchScore?: number | null;
   resumeMatchCriticalCount?: number;
+  scheduleHint?: KanbanScheduleHintSerialized | null;
   onClick: () => void;
+  onAddEvent: () => void;
   /** Stagger delay in seconds for entrance (columnIndex * 0.06 + cardIndex * 0.045) */
   entranceDelay?: number;
 }
@@ -48,7 +51,9 @@ export default function KanbanCard({
   createdAt,
   resumeMatchScore,
   resumeMatchCriticalCount = 0,
+  scheduleHint,
   onClick,
+  onAddEvent,
   entranceDelay = 0,
 }: KanbanCardProps) {
   const [showTooltip, setShowTooltip] = useState(false);
@@ -119,7 +124,7 @@ export default function KanbanCard({
         backgroundColor: "var(--dash-card-bg)",
         borderColor: "var(--dash-card-border)",
       }}
-      className="group relative cursor-pointer rounded-xl border p-4"
+      className="group relative cursor-pointer rounded-xl border pb-3 pl-4 pr-3 pt-4"
       onClick={onClick}
     >
       {/* Top accent line — height 2px → 3px on hover */}
@@ -140,7 +145,7 @@ export default function KanbanCard({
         >
           <GripVertical className="h-3.5 w-3.5" />
         </button>
-        <div className="min-w-0 flex-1">
+        <div className="min-w-0 flex-1 pr-6">
           <p
             className="truncate text-[15px] italic"
             style={{ color: "var(--dash-card-company)", fontFamily: "'Instrument Serif', serif" }}
@@ -159,6 +164,24 @@ export default function KanbanCard({
           >
             {timeAgo}
           </p>
+          {scheduleHint && (
+            <p
+              className="mt-1.5 line-clamp-2 text-[10px] font-medium leading-snug"
+              style={{
+                color: "var(--dash-status-interview)",
+                fontFamily: "'DM Sans', sans-serif",
+              }}
+            >
+              <span className="font-normal opacity-80">Next · </span>
+              {scheduleHint.label}
+              <span className="font-normal opacity-80">
+                {" · "}
+                {scheduleHint.kind === "follow_up"
+                  ? format(new Date(scheduleHint.at), "EEE, MMM d")
+                  : format(new Date(scheduleHint.at), "EEE, MMM d · h:mm a")}
+              </span>
+            </p>
+          )}
           {status === "WISHLIST" && resumeMatchScore != null && (
             <div
               className="relative mt-2 flex justify-end"
@@ -201,6 +224,18 @@ export default function KanbanCard({
           )}
         </div>
       </div>
+      <button
+        type="button"
+        title="Add interview or screen"
+        className="absolute right-2 top-3 rounded-md p-1 opacity-70 transition-opacity hover:opacity-100"
+        style={{ color: "var(--dash-column-text)" }}
+        onClick={(e) => {
+          e.stopPropagation();
+          onAddEvent();
+        }}
+      >
+        <CalendarPlus className="h-4 w-4" />
+      </button>
     </motion.div>
   );
 }

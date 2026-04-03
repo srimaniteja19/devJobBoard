@@ -1,6 +1,13 @@
 import { redirect } from "next/navigation";
 import { getCurrentUser } from "@/lib/session";
-import { getUserApplications, getApplicationStats, getFollowUpReminders, getApplicationStreak, getActivityByPeriod } from "@/lib/applications";
+import {
+  getUserApplicationsForDashboard,
+  getApplicationStats,
+  getFollowUpReminders,
+  getApplicationStreak,
+  getActivityByPeriod,
+} from "@/lib/applications";
+import { buildKanbanScheduleHint } from "@/lib/kanban-schedule";
 import DashboardClient from "@/components/dashboard/DashboardClient";
 import { toYMDLocal } from "@/lib/date-helpers";
 
@@ -9,7 +16,7 @@ export default async function DashboardPage() {
   if (!user) redirect("/login");
 
   const [applications, stats, followUps, streak, activityByPeriod] = await Promise.all([
-    getUserApplications(user.id),
+    getUserApplicationsForDashboard(user.id),
     getApplicationStats(user.id),
     getFollowUpReminders(user.id),
     getApplicationStreak(user.id),
@@ -38,6 +45,7 @@ export default async function DashboardPage() {
             }
           })()
         : 0,
+    scheduleHint: buildKanbanScheduleHint(a.followUpDate, a.events),
   }));
 
   const reminders = followUps.map((f) => ({

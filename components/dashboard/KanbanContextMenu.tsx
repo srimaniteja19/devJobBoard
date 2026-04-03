@@ -9,9 +9,16 @@ interface Props {
   company: string;
   currentStatus: string;
   children: React.ReactNode;
+  onAddEvent?: () => void;
 }
 
-export default function KanbanContextMenu({ applicationId, company, currentStatus, children }: Props) {
+export default function KanbanContextMenu({
+  applicationId,
+  company,
+  currentStatus,
+  children,
+  onAddEvent,
+}: Props) {
   const [pos, setPos] = useState<{ x: number; y: number } | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
@@ -56,6 +63,21 @@ export default function KanbanContextMenu({ applicationId, company, currentStatu
           className="fixed z-[60] border border-edge bg-surface py-1"
           style={{ left: pos.x, top: pos.y }}
         >
+          {onAddEvent && (
+            <button
+              type="button"
+              onClick={() => {
+                setPos(null);
+                onAddEvent();
+              }}
+              className="flex w-full px-3 py-2 text-left text-[12px] font-medium text-t-primary transition-theme hover:bg-bg"
+            >
+              Add event…
+            </button>
+          )}
+          {onAddEvent && (
+            <div className="mx-2 border-t border-edge" role="separator" />
+          )}
           <p className="px-3 py-1.5 text-[10px] font-medium uppercase tracking-widest text-t-faint">
             Move to
           </p>

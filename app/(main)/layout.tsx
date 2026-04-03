@@ -3,7 +3,16 @@
 import { Suspense, useEffect } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { LayoutDashboard, Table2, BarChart3, Activity, Calendar, Briefcase, GraduationCap } from "lucide-react";
+import {
+  LayoutDashboard,
+  Table2,
+  BarChart3,
+  Activity,
+  Calendar,
+  CalendarClock,
+  Briefcase,
+  GraduationCap,
+} from "lucide-react";
 import AuthButton from "@/components/layout/AuthButton";
 import ThemeToggle from "@/components/layout/ThemeToggle";
 import AddButton from "@/components/applications/AddButton";
@@ -29,6 +38,7 @@ const NAV_ITEMS = [
   { href: "/applications", label: "Table", icon: Table2 },
   { href: "/jobs", label: "Jobs", icon: Briefcase },
   { href: "/interview-prep", label: "Prep", icon: GraduationCap },
+  { href: "/schedule", label: "Schedule", icon: CalendarClock },
   { href: "/calendar", label: "Calendar", icon: Calendar },
   { href: "/stats", label: "Stats", icon: BarChart3 },
   { href: "/activity", label: "Activity", icon: Activity },

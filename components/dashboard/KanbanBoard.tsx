@@ -2,6 +2,8 @@
 
 import { useState, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import type { KanbanScheduleHintSerialized } from "@/lib/kanban-schedule";
+import QuickAddEventModal from "./QuickAddEventModal";
 import {
   DndContext,
   DragOverlay,
@@ -48,18 +50,21 @@ interface AppItem {
   createdAt: string;
   resumeMatchScore: number | null;
   resumeMatchCriticalCount: number;
+  scheduleHint: KanbanScheduleHintSerialized | null;
 }
 
 function Column({
   status,
   items,
   onCardClick,
+  onAddEvent,
   isLast,
   columnIndex,
 }: {
   status: AppStatus;
   items: AppItem[];
   onCardClick: (id: string) => void;
+  onAddEvent: (id: string, company: string) => void;
   isLast: boolean;
   columnIndex: number;
 }) {
@@ -171,6 +176,7 @@ function Column({
                       applicationId={item.id}
                       company={item.company}
                       currentStatus={item.status}
+                      onAddEvent={() => onAddEvent(item.id, item.company)}
                     >
                       <KanbanCard
                         id={item.id}
@@ -181,7 +187,9 @@ function Column({
                         createdAt={item.createdAt}
                         resumeMatchScore={item.resumeMatchScore}
                         resumeMatchCriticalCount={item.resumeMatchCriticalCount}
+                        scheduleHint={item.scheduleHint}
                         onClick={() => onCardClick(item.id)}
+                        onAddEvent={() => onAddEvent(item.id, item.company)}
                         entranceDelay={entranceDelay}
                       />
                     </KanbanContextMenu>
@@ -200,6 +208,10 @@ export default function KanbanBoard({ applications }: { applications: AppItem[] 
   const router = useRouter();
   const [items, setItems] = useState(applications);
   const [activeId, setActiveId] = useState<string | null>(null);
+  const [eventModal, setEventModal] = useState<{
+    id: string;
+    company: string;
+  } | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -275,6 +287,10 @@ export default function KanbanBoard({ applications }: { applications: AppItem[] 
 
   const reducedMotion = useReducedMotion();
 
+  const openEventModal = useCallback((id: string, company: string) => {
+    setEventModal({ id, company });
+  }, []);
+
   return (
     <DndContext
       sensors={sensors}
@@ -283,6 +299,12 @@ export default function KanbanBoard({ applications }: { applications: AppItem[] 
       onDragOver={handleDragOver}
       onDragEnd={handleDragEnd}
     >
+      <QuickAddEventModal
+        applicationId={eventModal?.id ?? ""}
+        company={eventModal?.company ?? ""}
+        open={!!eventModal}
+        onClose={() => setEventModal(null)}
+      />
       <motion.div
         className="rounded-2xl p-6 kanban-board-bg border shadow-lg"
       style={{ borderColor: "var(--dash-board-border)" }}
@@ -301,6 +323,7 @@ export default function KanbanBoard({ applications }: { applications: AppItem[] 
               status={status}
               items={grouped[status]}
               onCardClick={(id) => router.push(`/applications/${id}`)}
+              onAddEvent={openEventModal}
               isLast={idx === KANBAN_COLUMNS.length - 1}
               columnIndex={idx}
             />

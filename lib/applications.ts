@@ -47,6 +47,23 @@ export async function getUserApplications(userId: string) {
   });
 }
 
+/** Dashboard Kanban: same as getUserApplications plus next upcoming event per row. */
+export async function getUserApplicationsForDashboard(userId: string) {
+  const startOfToday = startOfLocalDay(new Date());
+  return prisma.application.findMany({
+    where: { userId },
+    orderBy: { updatedAt: "desc" },
+    include: {
+      resumeMatch: true,
+      events: {
+        where: { scheduledAt: { gte: startOfToday } },
+        orderBy: { scheduledAt: "asc" },
+        take: 1,
+      },
+    },
+  });
+}
+
 export async function getApplicationById(id: string, userId: string) {
   return prisma.application.findFirst({
     where: { id, userId },

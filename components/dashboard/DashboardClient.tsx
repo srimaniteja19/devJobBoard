@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+import { CalendarClock } from "lucide-react";
 import { useDashboardTheme, useDashboardNotes, useDashboardMetrics } from "./DashboardPreferences";
 import ThemeSelector from "./ThemeSelector";
 import DashboardNotes from "./DashboardNotes";
@@ -9,6 +11,7 @@ import FollowUpReminders from "./FollowUpReminders";
 import KanbanBoard from "./KanbanBoard";
 import ActivityByPeriod from "./ActivityByPeriod";
 import AddButton from "@/components/applications/AddButton";
+import type { KanbanScheduleHintSerialized } from "@/lib/kanban-schedule";
 
 interface Reminder {
   id: string;
@@ -26,6 +29,7 @@ interface AppItem {
   createdAt: string;
   resumeMatchScore: number | null;
   resumeMatchCriticalCount: number;
+  scheduleHint: KanbanScheduleHintSerialized | null;
 }
 
 interface ActivityData {
@@ -100,6 +104,30 @@ export default function DashboardClient({
 
           <div className="space-y-5">
             <FollowUpReminders reminders={reminders} />
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <p
+                className="text-[12px] font-light"
+                style={{
+                  color: "var(--dash-column-text)",
+                  fontFamily: "'DM Sans', sans-serif",
+                }}
+              >
+                Next calls and interviews also appear on cards. Use the calendar icon to
+                add a screen or interview without opening the job.
+              </p>
+              <Link
+                href="/schedule"
+                className="inline-flex shrink-0 items-center gap-2 self-start border px-3 py-1.5 text-[11px] font-medium transition-opacity hover:opacity-90 sm:self-auto"
+                style={{
+                  borderColor: "var(--dash-empty-border)",
+                  color: "var(--dash-column-text)",
+                  fontFamily: "'DM Sans', sans-serif",
+                }}
+              >
+                <CalendarClock className="h-3.5 w-3.5" />
+                Full schedule timeline
+              </Link>
+            </div>
             <KanbanBoard applications={applications} />
             <ActivityByPeriod data={activityByPeriod} />
           </div>

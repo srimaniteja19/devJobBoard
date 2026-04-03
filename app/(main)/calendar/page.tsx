@@ -1,4 +1,6 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
+import { CalendarClock } from "lucide-react";
 import { getCurrentUser } from "@/lib/session";
 import { getCalendarItems } from "@/lib/applications";
 import InterviewCalendar from "@/components/calendar/InterviewCalendar";
@@ -15,13 +17,23 @@ export default async function CalendarPage() {
 
   return (
     <div className="container mx-auto max-w-4xl px-4 py-4 sm:py-6">
-      <div className="mb-4 sm:mb-6">
-        <h1 className="text-[22px] font-medium text-t-primary sm:text-[28px]">
-          Interview Calendar
-        </h1>
-        <p className="mt-1 text-[12px] font-light text-t-muted sm:text-[13px]">
-          Follow-ups, interviews, and deadlines. Click a day to see what&apos;s due.
-        </p>
+      <div className="mb-4 flex flex-col gap-3 sm:mb-6 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <h1 className="text-[22px] font-medium text-t-primary sm:text-[28px]">
+            Interview Calendar
+          </h1>
+          <p className="mt-1 text-[12px] font-light text-t-muted sm:text-[13px]">
+            Follow-ups, interviews, and deadlines. Click a day to see what&apos;s
+            due.
+          </p>
+        </div>
+        <Link
+          href="/schedule"
+          className="inline-flex shrink-0 items-center gap-2 self-start border border-edge bg-surface px-3 py-2 text-[12px] font-medium text-t-muted transition-theme hover:border-accent/50 hover:text-t-primary sm:self-auto"
+        >
+          <CalendarClock className="h-4 w-4" />
+          Timeline view
+        </Link>
       </div>
 
       <InterviewCalendar initialItems={items} />
