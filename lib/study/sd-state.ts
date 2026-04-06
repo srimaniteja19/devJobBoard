@@ -1,0 +1,100 @@
+import { prisma } from "@/lib/db";
+import {
+  nextRankProgress,
+  parseJsonStringArray,
+  rankForXp,
+  scheduledConceptId,
+  scheduledConceptIndex,
+} from "./sd-gamification";
+import { SD_CURRICULUM, SD_CURRICULUM_VERSION, getConceptById, type SdConcept } from "./system-design-curriculum";
+
+export type SdStatePayload = {
+  version: number;
+  curriculum: SdConcept[];
+  startYmd: string | null;
+  todayYmd: string;
+  scheduledIndex: number;
+  scheduledConceptId: string;
+  completedIds: string[];
+  xp: number;
+  currentStreak: number;
+  longestStreak: number;
+  rank: ReturnType<typeof rankForXp>;
+  rankProgress: ReturnType<typeof nextRankProgress>;
+  badgesUnlocked: string[];
+  todayConcept: SdConcept;
+  todayConceptCompleted: boolean;
+  scheduledBonusAvailable: boolean;
+};
+
+function todayConceptForUser(
+  startYmd: string | null,
+  todayYmd: string,
+  completedIds: string[]
+): { concept: SdConcept; scheduledIndex: number; scheduledId: string; completed: boolean; bonusAvailable: boolean } {
+  if (!startYmd) {
+    const c = SD_CURRICULUM[0];
+    return {
+      concept: c,
+      scheduledIndex: 0,
+      scheduledId: c.id,
+      completed: completedIds.includes(c.id),
+      bonusAvailable: false,
+    };
+  }
+  const idx = scheduledConceptIndex(startYmd, todayYmd);
+  const sid = scheduledConceptId(startYmd, todayYmd);
+  const concept = getConceptById(sid) ?? SD_CURRICULUM[0];
+  const completed = completedIds.includes(concept.id);
+  return {
+    concept,
+    scheduledIndex: idx,
+    scheduledId: sid,
+    completed,
+    bonusAvailable: !completed,
+  };
+}
+
+export async function buildSdStateForUser(userId: string, todayYmd: string): Promise<SdStatePayload> {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: {
+      sdStudyStartYmd: true,
+      sdStudyCompletedIds: true,
+      sdStudyXp: true,
+      sdStudyCurrentStreak: true,
+      sdStudyLongestStreak: true,
+      sdBadgesUnlocked: true,
+    },
+  });
+
+  const completedIds = user ? parseJsonStringArray(user.sdStudyCompletedIds) : [];
+  const xp = user?.sdStudyXp ?? 0;
+  const startYmd = user?.sdStudyStartYmd ?? null;
+  const { concept, scheduledIndex, scheduledId, completed, bonusAvailable } = todayConceptForUser(
+    startYmd,
+    todayYmd,
+    completedIds
+  );
+
+  const badgesUnlocked = user ? parseJsonStringArray(user.sdBadgesUnlocked) : [];
+
+  return {
+    version: SD_CURRICULUM_VERSION,
+    curriculum: SD_CURRICULUM,
+    startYmd,
+    todayYmd,
+    scheduledIndex,
+    scheduledConceptId: scheduledId,
+    completedIds,
+    xp,
+    currentStreak: user?.sdStudyCurrentStreak ?? 0,
+    longestStreak: user?.sdStudyLongestStreak ?? 0,
+    rank: rankForXp(xp),
+    rankProgress: nextRankProgress(xp),
+    badgesUnlocked,
+    todayConcept: concept,
+    todayConceptCompleted: completed,
+    scheduledBonusAvailable: bonusAvailable && !!startYmd,
+  };
+}

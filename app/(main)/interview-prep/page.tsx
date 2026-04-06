@@ -14,7 +14,7 @@ export default async function InterviewPrepPage() {
             FAANG+ Interview Prep
           </h1>
           <p className="mt-2 text-[15px] text-prep-text-secondary">
-            Interview processes, tips, and prep guides for 10 top tech companies
+            Gamified system design track plus interview processes and prep guides for top tech companies.
           </p>
         </div>
         <InterviewPrepClient />

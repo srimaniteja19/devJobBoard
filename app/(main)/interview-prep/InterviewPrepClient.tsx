@@ -34,6 +34,7 @@ import {
   CompanyIllu,
   PrepStartIllu,
 } from "@/components/interview-prep/InterviewIllustration";
+import SystemDesignMastery from "@/components/interview-prep/SystemDesignMastery";
 
 /* Palette: Background #F8FAFC, Primary #6366F1, Accent #22C55E, Text #1E293B, Secondary #64748B */
 const CARD_GRADIENTS = [
@@ -550,6 +551,7 @@ export default function InterviewPrepClient() {
 
   return (
     <div className="space-y-8">
+      <SystemDesignMastery />
       {customPrep ? (
         <CustomPrepView
           prep={customPrep}
