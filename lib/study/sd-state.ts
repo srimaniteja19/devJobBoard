@@ -2,6 +2,7 @@ import { prisma } from "@/lib/db";
 import {
   nextRankProgress,
   parseJsonStringArray,
+  parseJsonStringRecord,
   rankForXp,
   scheduledConceptId,
   scheduledConceptIndex,
@@ -16,6 +17,8 @@ export type SdStatePayload = {
   scheduledIndex: number;
   scheduledConceptId: string;
   completedIds: string[];
+  revisitBookmarkIds: string[];
+  revisitLastYmd: Record<string, string>;
   xp: number;
   currentStreak: number;
   longestStreak: number;
@@ -65,10 +68,14 @@ export async function buildSdStateForUser(userId: string, todayYmd: string): Pro
       sdStudyCurrentStreak: true,
       sdStudyLongestStreak: true,
       sdBadgesUnlocked: true,
+      sdRevisitBookmarks: true,
+      sdRevisitLastYmd: true,
     },
   });
 
   const completedIds = user ? parseJsonStringArray(user.sdStudyCompletedIds) : [];
+  const revisitBookmarkIds = user ? parseJsonStringArray(user.sdRevisitBookmarks) : [];
+  const revisitLastYmd = user ? parseJsonStringRecord(user.sdRevisitLastYmd) : {};
   const xp = user?.sdStudyXp ?? 0;
   const startYmd = user?.sdStudyStartYmd ?? null;
   const { concept, scheduledIndex, scheduledId, completed, bonusAvailable } = todayConceptForUser(
@@ -87,6 +94,8 @@ export async function buildSdStateForUser(userId: string, todayYmd: string): Pro
     scheduledIndex,
     scheduledConceptId: scheduledId,
     completedIds,
+    revisitBookmarkIds,
+    revisitLastYmd,
     xp,
     currentStreak: user?.sdStudyCurrentStreak ?? 0,
     longestStreak: user?.sdStudyLongestStreak ?? 0,

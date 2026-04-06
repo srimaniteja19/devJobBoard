@@ -70,6 +70,26 @@ export function parseJsonStringArray(raw: string): string[] {
   }
 }
 
+/** conceptId → last calendar day user logged a revisit (YYYY-MM-DD). */
+export function parseJsonStringRecord(raw: string): Record<string, string> {
+  try {
+    const p = JSON.parse(raw);
+    if (p && typeof p === "object" && !Array.isArray(p)) {
+      const out: Record<string, string> = {};
+      for (const [k, v] of Object.entries(p)) {
+        if (typeof k === "string" && typeof v === "string") out[k] = v;
+      }
+      return out;
+    }
+  } catch {
+    // ignore
+  }
+  return {};
+}
+
+/** XP for logging a revisit (once per concept per local day). */
+export const XP_REVISIT_LOG = 5;
+
 export function updateStreakOnComplete(
   lastActiveYmd: string | null,
   completeYmd: string,

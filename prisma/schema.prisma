@@ -85,6 +85,8 @@ model User {
   sdStudyLongestStreak     Int      @default(0)
   sdStudyLastActiveYmd     String?
   sdBadgesUnlocked         String   @default("[]")
+  sdRevisitBookmarks       String   @default("[]") // JSON string[] concept ids to revisit
+  sdRevisitLastYmd         String   @default("{}") // JSON Record<conceptId, YYYY-MM-DD>
 
   accounts     Account[]
   sessions     Session[]

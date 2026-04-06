@@ -5,13 +5,20 @@ import { isValidYMD, toYMDLocal } from "@/lib/date-helpers";
 import {
   computeNewBadges,
   parseJsonStringArray,
+  parseJsonStringRecord,
   scheduledConceptId,
   totalXpForCompletion,
   updateStreakOnComplete,
+  XP_REVISIT_LOG,
 } from "@/lib/study/sd-gamification";
 import { buildSdStateForUser } from "@/lib/study/sd-state";
 import { getConceptById } from "@/lib/study/system-design-curriculum";
-import { sdCompleteSchema, sdStartSchema } from "@/lib/validations/sd-study";
+import {
+  sdCompleteSchema,
+  sdRevisitConceptSchema,
+  sdRevisitLogSchema,
+  sdStartSchema,
+} from "@/lib/validations/sd-study";
 
 export async function GET(req: NextRequest) {
   const { user, unauthorized } = await authenticatedAction();
@@ -142,6 +149,122 @@ export async function POST(req: NextRequest) {
         alreadyCompleted: already,
         xpGained: addXp,
         bonusScheduled: already ? false : bonusScheduled,
+        newBadges,
+        state,
+      });
+    }
+
+    if (action === "revisitBookmark" || action === "revisitUnbookmark") {
+      const parsed = sdRevisitConceptSchema.safeParse(body);
+      if (!parsed.success) {
+        return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
+      }
+      const { conceptId } = parsed.data;
+      if (!getConceptById(conceptId)) {
+        return NextResponse.json({ error: "Unknown concept" }, { status: 400 });
+      }
+
+      const u = await prisma.user.findUnique({
+        where: { id: user.id },
+        select: {
+          sdStudyCompletedIds: true,
+          sdRevisitBookmarks: true,
+        },
+      });
+      if (!u) return NextResponse.json({ error: "User not found" }, { status: 404 });
+
+      const completed = parseJsonStringArray(u.sdStudyCompletedIds);
+      if (!completed.includes(conceptId)) {
+        return NextResponse.json(
+          { error: "Only completed topics can be added to revisit" },
+          { status: 400 }
+        );
+      }
+
+      let bookmarks = parseJsonStringArray(u.sdRevisitBookmarks);
+      if (action === "revisitBookmark") {
+        if (!bookmarks.includes(conceptId)) bookmarks = [...bookmarks, conceptId];
+      } else {
+        bookmarks = bookmarks.filter((id) => id !== conceptId);
+      }
+
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { sdRevisitBookmarks: JSON.stringify(bookmarks) },
+      });
+
+      const state = await buildSdStateForUser(user.id, toYMDLocal(new Date()));
+      return NextResponse.json({ ok: true, state });
+    }
+
+    if (action === "revisitLog") {
+      const parsed = sdRevisitLogSchema.safeParse(body);
+      if (!parsed.success) {
+        return NextResponse.json({ error: parsed.error.flatten() }, { status: 400 });
+      }
+      const { conceptId, ymd: logYmd } = parsed.data;
+      if (!getConceptById(conceptId)) {
+        return NextResponse.json({ error: "Unknown concept" }, { status: 400 });
+      }
+
+      const u = await prisma.user.findUnique({
+        where: { id: user.id },
+        select: {
+          sdStudyCompletedIds: true,
+          sdStudyXp: true,
+          sdStudyCurrentStreak: true,
+          sdRevisitLastYmd: true,
+          sdBadgesUnlocked: true,
+        },
+      });
+      if (!u) return NextResponse.json({ error: "User not found" }, { status: 404 });
+
+      const completed = parseJsonStringArray(u.sdStudyCompletedIds);
+      if (!completed.includes(conceptId)) {
+        return NextResponse.json({ error: "Complete the topic before logging revisits" }, { status: 400 });
+      }
+
+      const lastMap = parseJsonStringRecord(u.sdRevisitLastYmd);
+      const alreadyToday = lastMap[conceptId] === logYmd;
+
+      if (alreadyToday) {
+        const state = await buildSdStateForUser(user.id, logYmd);
+        return NextResponse.json({
+          ok: true,
+          xpGained: 0,
+          alreadyLoggedToday: true,
+          newBadges: [],
+          state,
+        });
+      }
+
+      const nextMap = { ...lastMap, [conceptId]: logYmd };
+      const newXp = u.sdStudyXp + XP_REVISIT_LOG;
+
+      const prevBadges = new Set(parseJsonStringArray(u.sdBadgesUnlocked));
+      const newBadges = computeNewBadges({
+        completedIds: completed,
+        xp: newXp,
+        currentStreak: u.sdStudyCurrentStreak,
+        previouslyUnlocked: prevBadges,
+      });
+
+      const badgeIds = new Set([...parseJsonStringArray(u.sdBadgesUnlocked), ...newBadges.map((b) => b.id)]);
+
+      await prisma.user.update({
+        where: { id: user.id },
+        data: {
+          sdRevisitLastYmd: JSON.stringify(nextMap),
+          sdStudyXp: newXp,
+          sdBadgesUnlocked: JSON.stringify(Array.from(badgeIds)),
+        },
+      });
+
+      const state = await buildSdStateForUser(user.id, logYmd);
+      return NextResponse.json({
+        ok: true,
+        xpGained: XP_REVISIT_LOG,
+        alreadyLoggedToday: false,
         newBadges,
         state,
       });

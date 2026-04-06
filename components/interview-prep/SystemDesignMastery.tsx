@@ -1,52 +1,28 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  BookOpen,
   ChevronDown,
-  ClipboardList,
   Crown,
-  ExternalLink,
-  FileCode2,
   Flame,
-  GraduationCap,
-  Layers,
   Loader2,
   Sparkles,
   Star,
-  Target,
   Trophy,
-  Video,
   Zap,
   Check,
   Circle,
   Rocket,
+  Bookmark,
+  History,
+  X,
 } from "lucide-react";
 import { toYMDLocal } from "@/lib/date-helpers";
 import { fireConfetti } from "@/lib/confetti";
 import { SD_BADGES, type SdBadge } from "@/lib/study/sd-gamification";
-import {
-  SD_PRIMER_ANKI_FOLDER,
-  SD_PRIMER_README,
-  type SdConcept,
-  type SdResource,
-} from "@/lib/study/system-design-curriculum";
-
-function resourceKindIcon(kind: SdResource["kind"]) {
-  switch (kind) {
-    case "video":
-      return <Video className="h-3.5 w-3.5 shrink-0" />;
-    case "exercise":
-      return <FileCode2 className="h-3.5 w-3.5 shrink-0" />;
-    case "book":
-      return <BookOpen className="h-3.5 w-3.5 shrink-0" />;
-    case "course":
-      return <GraduationCap className="h-3.5 w-3.5 shrink-0" />;
-    default:
-      return <Layers className="h-3.5 w-3.5 shrink-0" />;
-  }
-}
+import { SD_PRIMER_ANKI_FOLDER, SD_PRIMER_README, type SdConcept } from "@/lib/study/system-design-curriculum";
+import { SdConceptLearningContent } from "@/components/interview-prep/SdConceptLearningContent";
 
 type SdState = {
   version: number;
@@ -55,6 +31,8 @@ type SdState = {
   todayYmd: string;
   scheduledConceptId: string;
   completedIds: string[];
+  revisitBookmarkIds: string[];
+  revisitLastYmd: Record<string, string>;
   xp: number;
   currentStreak: number;
   longestStreak: number;
@@ -75,7 +53,7 @@ const BADGE_ICONS: Record<SdBadge["icon"], React.ReactNode> = {
   flame: <Flame className="h-4 w-4" />,
   trophy: <Trophy className="h-4 w-4" />,
   star: <Star className="h-4 w-4" />,
-  target: <Target className="h-4 w-4" />,
+  target: <Star className="h-4 w-4" />,
   crown: <Crown className="h-4 w-4" />,
 };
 
@@ -104,7 +82,9 @@ export default function SystemDesignMastery() {
   const [error, setError] = useState<string | null>(null);
   const [toast, setToast] = useState<string | null>(null);
   const [curriculumOpen, setCurriculumOpen] = useState(false);
+  const [pastLearningsOpen, setPastLearningsOpen] = useState(false);
   const [newBadges, setNewBadges] = useState<SdBadge[]>([]);
+  const [revisitModalConceptId, setRevisitModalConceptId] = useState<string | null>(null);
 
   const ymd = toYMDLocal(new Date());
 
@@ -126,6 +106,11 @@ export default function SystemDesignMastery() {
   useEffect(() => {
     void load();
   }, [load]);
+
+  const revisitModalConcept = useMemo(() => {
+    if (!state || !revisitModalConceptId) return null;
+    return state.curriculum.find((c) => c.id === revisitModalConceptId) ?? null;
+  }, [state, revisitModalConceptId]);
 
   const startJourney = async () => {
     setActionLoading(true);
@@ -180,6 +165,58 @@ export default function SystemDesignMastery() {
     }
   };
 
+  const toggleRevisitBookmark = async (conceptId: string, bookmarked: boolean) => {
+    setActionLoading(true);
+    try {
+      const res = await fetch("/api/study/system-design", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: bookmarked ? "revisitUnbookmark" : "revisitBookmark",
+          conceptId,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(typeof data.error === "string" ? data.error : "Failed");
+      if (data.state) setState(data.state as SdState);
+      setToast(bookmarked ? "Removed from revisit queue" : "Saved to revisit queue");
+      setTimeout(() => setToast(null), 3000);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Error");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const logRevisit = async (conceptId: string) => {
+    setActionLoading(true);
+    setNewBadges([]);
+    try {
+      const res = await fetch("/api/study/system-design", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "revisitLog", conceptId, ymd }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(typeof data.error === "string" ? data.error : "Failed");
+      if (data.state) setState(data.state as SdState);
+      if (data.xpGained > 0) {
+        fireConfetti();
+        setToast(`+${data.xpGained} XP — revisit logged`);
+      } else if (data.alreadyLoggedToday) {
+        setToast("Already logged a revisit for this topic today");
+      }
+      if (Array.isArray(data.newBadges) && data.newBadges.length > 0) {
+        setNewBadges(data.newBadges as SdBadge[]);
+      }
+      setTimeout(() => setToast(null), 4000);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Error");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center rounded-3xl border border-prep-primary/10 bg-white py-16">
@@ -205,7 +242,12 @@ export default function SystemDesignMastery() {
 
   const unlocked = new Set(state.badgesUnlocked);
   const completed = new Set(state.completedIds);
+  const bookmarked = new Set(state.revisitBookmarkIds ?? []);
   const progressPct = Math.round((state.completedIds.length / state.curriculum.length) * 100);
+  const completedTopics = state.curriculum.filter((c) => completed.has(c.id));
+  const bookmarkedTopics = state.revisitBookmarkIds
+    .map((id) => state.curriculum.find((c) => c.id === id))
+    .filter((c): c is SdConcept => !!c);
 
   return (
     <section className="overflow-hidden rounded-3xl border border-prep-primary/15 bg-gradient-to-br from-indigo-50/90 via-white to-emerald-50/60 shadow-xl shadow-indigo-200/20">
@@ -358,6 +400,91 @@ export default function SystemDesignMastery() {
           </div>
         ) : (
           <>
+            {bookmarkedTopics.length > 0 && (
+              <div className="mb-6 rounded-2xl border border-amber-200/80 bg-gradient-to-br from-amber-50/90 to-orange-50/40 p-4 sm:p-5">
+                <div className="mb-3 flex items-center gap-2">
+                  <Bookmark className="h-4 w-4 text-amber-700" />
+                  <h3 className="text-[12px] font-bold uppercase tracking-wider text-amber-900">Revisit queue</h3>
+                </div>
+                <p className="mb-3 text-[12px] text-amber-900/85">
+                  Topics you bookmarked — open one to run the practice steps again and log a revisit (+5 XP once per
+                  topic per day).
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {bookmarkedTopics.map((c) => (
+                    <button
+                      key={c.id}
+                      type="button"
+                      onClick={() => setRevisitModalConceptId(c.id)}
+                      className="inline-flex items-center gap-1.5 rounded-xl border border-amber-300/60 bg-white px-3 py-2 text-left text-[12px] font-medium text-amber-950 shadow-sm transition hover:bg-amber-50"
+                    >
+                      {c.title}
+                      {state.revisitLastYmd?.[c.id] && (
+                        <span className="text-[10px] font-normal text-amber-800/70">
+                          · last {state.revisitLastYmd[c.id]}
+                        </span>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className="mb-6">
+              <button
+                type="button"
+                onClick={() => setPastLearningsOpen((o) => !o)}
+                className="flex w-full items-center justify-between rounded-xl border border-prep-primary/15 bg-prep-bg/50 px-4 py-3 text-left transition hover:bg-prep-bg"
+              >
+                <span className="flex items-center gap-2 text-[13px] font-semibold text-prep-text">
+                  <History className="h-4 w-4 text-prep-primary" />
+                  Past learnings ({completedTopics.length})
+                </span>
+                <ChevronDown className={`h-5 w-5 text-prep-text-secondary transition-transform ${pastLearningsOpen ? "rotate-180" : ""}`} />
+              </button>
+              {pastLearningsOpen && (
+                <ul className="mt-2 max-h-64 space-y-1.5 overflow-y-auto rounded-xl border border-prep-primary/10 bg-white p-2">
+                  {completedTopics.length === 0 ? (
+                    <li className="px-3 py-4 text-center text-[13px] text-prep-text-secondary">
+                      Complete topics to see them here for review.
+                    </li>
+                  ) : (
+                    completedTopics.map((c) => (
+                      <li
+                        key={c.id}
+                        className="flex flex-wrap items-center gap-2 rounded-lg border border-transparent px-2 py-2 hover:border-prep-primary/10 hover:bg-slate-50/80"
+                      >
+                        <span className="min-w-0 flex-1 text-[13px] font-medium text-prep-text">{c.title}</span>
+                        {state.revisitLastYmd?.[c.id] && (
+                          <span className="text-[10px] text-prep-text-secondary">Revisited {state.revisitLastYmd[c.id]}</span>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => setRevisitModalConceptId(c.id)}
+                          className="shrink-0 rounded-lg border border-indigo-200 bg-indigo-50 px-2.5 py-1 text-[11px] font-semibold text-indigo-800"
+                        >
+                          Review
+                        </button>
+                        <button
+                          type="button"
+                          title={bookmarked.has(c.id) ? "Remove from revisit queue" : "Add to revisit queue"}
+                          onClick={() => void toggleRevisitBookmark(c.id, bookmarked.has(c.id))}
+                          disabled={actionLoading}
+                          className={`shrink-0 rounded-lg p-1.5 transition ${
+                            bookmarked.has(c.id)
+                              ? "bg-amber-100 text-amber-800"
+                              : "text-slate-400 hover:bg-slate-100 hover:text-amber-700"
+                          }`}
+                        >
+                          <Bookmark className={`h-4 w-4 ${bookmarked.has(c.id) ? "fill-current" : ""}`} />
+                        </button>
+                      </li>
+                    ))
+                  )}
+                </ul>
+              )}
+            </div>
+
             <div className="mb-2 flex flex-wrap items-center gap-2">
               <span className="rounded-full bg-indigo-100 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-indigo-800">
                 Today&apos;s quest
@@ -371,141 +498,13 @@ export default function SystemDesignMastery() {
             <h3 className="text-xl font-bold text-prep-text">{state.todayConcept.title}</h3>
             <p className="mt-2 text-[14px] leading-relaxed text-prep-text-secondary">{state.todayConcept.summary}</p>
 
-            <div className="mt-4 flex flex-wrap gap-2">
-              <a
-                href={state.todayConcept.primerTopic?.href ?? SD_PRIMER_README}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 rounded-xl border-2 border-indigo-200 bg-white px-4 py-2.5 text-[13px] font-semibold text-indigo-800 shadow-sm transition hover:border-indigo-300 hover:bg-indigo-50/80"
-              >
-                <BookOpen className="h-4 w-4" />
-                {state.todayConcept.primerTopic?.label ?? "Open System Design Primer"}
-                <ExternalLink className="h-3.5 w-3.5 opacity-70" />
-              </a>
-              {state.todayConcept.primerSolution && (
-                <a
-                  href={state.todayConcept.primerSolution.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 rounded-xl border border-prep-primary/20 bg-violet-50 px-4 py-2.5 text-[13px] font-medium text-violet-900 transition hover:bg-violet-100/80"
-                >
-                  <FileCode2 className="h-4 w-4" />
-                  {state.todayConcept.primerSolution.title}
-                  <ExternalLink className="h-3.5 w-3.5 opacity-70" />
-                </a>
-              )}
-            </div>
+            <SdConceptLearningContent
+              concept={state.todayConcept}
+              practiceLead="Do this today"
+              practiceHint="Follow the steps in order — they mirror how engineers actually learn from the Primer (read → sketch → compare). Don&apos;t tap &quot;Complete&quot; until you&apos;ve done the work."
+            />
 
-            {state.todayConcept.practiceExercise && (
-              <div className="mt-5 rounded-2xl border-2 border-emerald-200/80 bg-gradient-to-br from-emerald-50/90 to-white p-4 sm:p-5">
-                <div className="mb-3 flex flex-wrap items-center gap-2">
-                  <ClipboardList className="h-4 w-4 text-emerald-700" />
-                  <h4 className="text-[12px] font-bold uppercase tracking-wider text-emerald-900">
-                    Do this today · {state.todayConcept.practiceExercise.title}
-                  </h4>
-                  <span className="rounded-full bg-emerald-600/15 px-2 py-0.5 text-[11px] font-semibold text-emerald-800">
-                    ~{state.todayConcept.practiceExercise.minutes} min
-                  </span>
-                </div>
-                <p className="mb-3 text-[12px] leading-relaxed text-emerald-900/80">
-                  Follow the steps in order — they mirror how engineers actually learn from the Primer (read → sketch →
-                  compare). Don&apos;t tap &quot;Complete&quot; until you&apos;ve done the work.
-                </p>
-                <ol className="list-decimal space-y-2.5 pl-4 text-[13px] leading-relaxed text-prep-text">
-                  {state.todayConcept.practiceExercise.steps.map((s, i) => (
-                    <li key={i} className="pl-1 marker:font-semibold marker:text-emerald-700">
-                      {s}
-                    </li>
-                  ))}
-                </ol>
-              </div>
-            )}
-
-            {state.todayConcept.selfCheck && state.todayConcept.selfCheck.length > 0 && (
-              <div className="mt-5 rounded-2xl border border-amber-200/90 bg-amber-50/50 p-4 sm:p-5">
-                <h4 className="mb-2 flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider text-amber-900">
-                  <GraduationCap className="h-3.5 w-3.5" />
-                  Self-check (retrieval practice)
-                </h4>
-                <p className="mb-3 text-[12px] text-amber-900/85">
-                  Answer out loud or write 2–4 sentences each — no peeking at notes. If you stall, re-open the Primer
-                  section only for that gap.
-                </p>
-                <ul className="space-y-2">
-                  {state.todayConcept.selfCheck.map((q, i) => (
-                    <li key={i} className="flex gap-2 text-[13px] text-prep-text">
-                      <span className="font-mono text-[11px] font-bold text-amber-700">{i + 1}.</span>
-                      {q}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-
-            {state.todayConcept.memorizationTip && (
-              <p className="mt-4 rounded-lg border border-slate-200 bg-slate-50/80 px-3 py-2 text-[12px] leading-relaxed text-prep-text-secondary">
-                <span className="font-semibold text-prep-text">Memory: </span>
-                {state.todayConcept.memorizationTip}
-              </p>
-            )}
-
-            <div className="mt-5 grid gap-5 sm:grid-cols-2">
-              <div className="rounded-2xl border border-prep-primary/10 bg-prep-bg/40 p-4">
-                <h4 className="mb-2 text-[11px] font-bold uppercase tracking-wider text-prep-text-secondary">
-                  Learning objectives
-                </h4>
-                <ul className="space-y-2">
-                  {state.todayConcept.learningObjectives.map((o, i) => (
-                    <li key={i} className="flex gap-2 text-[13px] text-prep-text">
-                      <Target className="mt-0.5 h-3.5 w-3.5 shrink-0 text-prep-accent" />
-                      {o}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-              <div className="rounded-2xl border border-prep-primary/10 bg-prep-bg/40 p-4">
-                <h4 className="mb-2 text-[11px] font-bold uppercase tracking-wider text-prep-text-secondary">
-                  Quest todos
-                </h4>
-                <ul className="space-y-2">
-                  {state.todayConcept.suggestedTodos.map((t, i) => (
-                    <li key={i} className="flex gap-2 text-[13px] text-prep-text">
-                      <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-slate-400" />
-                      {t}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </div>
-
-            <div className="mt-5">
-              <h4 className="mb-2 flex items-center gap-2 text-[11px] font-bold uppercase tracking-wider text-prep-text-secondary">
-                <BookOpen className="h-3.5 w-3.5" />
-                Resources
-              </h4>
-              <div className="flex flex-col gap-2">
-                {state.todayConcept.resources.map((r) => (
-                  <a
-                    key={r.url}
-                    href={r.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-start gap-2 rounded-xl border border-prep-primary/15 bg-white px-3 py-2.5 text-left text-[12px] font-medium text-prep-primary transition hover:bg-indigo-50"
-                  >
-                    <span className="mt-0.5 text-indigo-500">{resourceKindIcon(r.kind)}</span>
-                    <span className="min-w-0 flex-1">
-                      <span className="block">{r.title}</span>
-                      {r.note && (
-                        <span className="mt-0.5 block text-[11px] font-normal text-prep-text-secondary">{r.note}</span>
-                      )}
-                    </span>
-                    <ExternalLink className="h-3.5 w-3.5 shrink-0 opacity-60" />
-                  </a>
-                ))}
-              </div>
-            </div>
-
-            <div className="mt-6 flex flex-wrap gap-3">
+            <div className="mt-6 flex flex-wrap items-center gap-3">
               <button
                 type="button"
                 onClick={() => void completeConcept(state.todayConcept.id)}
@@ -526,6 +525,21 @@ export default function SystemDesignMastery() {
                   </>
                 )}
               </button>
+              {state.todayConceptCompleted && (
+                <button
+                  type="button"
+                  onClick={() => void toggleRevisitBookmark(state.todayConcept.id, bookmarked.has(state.todayConcept.id))}
+                  disabled={actionLoading}
+                  className={`inline-flex items-center gap-2 rounded-2xl border-2 px-4 py-3 text-[13px] font-semibold transition ${
+                    bookmarked.has(state.todayConcept.id)
+                      ? "border-amber-300 bg-amber-50 text-amber-900"
+                      : "border-prep-primary/20 text-prep-text hover:border-amber-200"
+                  }`}
+                >
+                  <Bookmark className={`h-4 w-4 ${bookmarked.has(state.todayConcept.id) ? "fill-current" : ""}`} />
+                  {bookmarked.has(state.todayConcept.id) ? "In revisit queue" : "Save for revisit"}
+                </button>
+              )}
             </div>
           </>
         )}
@@ -545,10 +559,11 @@ export default function SystemDesignMastery() {
             {state.curriculum.map((c, i) => {
               const done = completed.has(c.id);
               const isToday = c.id === state.scheduledConceptId;
+              const bm = bookmarked.has(c.id);
               return (
                 <li
                   key={c.id}
-                  className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-[12px] ${
+                  className={`flex items-center gap-2 rounded-lg border px-2 py-2 text-[12px] ${
                     isToday ? "border-indigo-300 bg-indigo-50/80" : "border-prep-primary/10 bg-white"
                   }`}
                 >
@@ -560,9 +575,30 @@ export default function SystemDesignMastery() {
                   ) : (
                     <Circle className="h-3.5 w-3.5 shrink-0 text-slate-300" />
                   )}
-                  <span className={`flex-1 ${done ? "text-prep-text-secondary line-through" : "text-prep-text"}`}>
+                  <span className={`min-w-0 flex-1 ${done ? "text-prep-text-secondary line-through" : "text-prep-text"}`}>
                     {c.title}
                   </span>
+                  {done && (
+                    <>
+                      <button
+                        type="button"
+                        title="Review"
+                        onClick={() => setRevisitModalConceptId(c.id)}
+                        className="shrink-0 rounded border border-indigo-200 px-2 py-0.5 text-[10px] font-semibold text-indigo-800"
+                      >
+                        Review
+                      </button>
+                      <button
+                        type="button"
+                        title={bm ? "Remove bookmark" : "Bookmark for revisit"}
+                        onClick={() => void toggleRevisitBookmark(c.id, bm)}
+                        disabled={actionLoading}
+                        className={`shrink-0 rounded p-1 ${bm ? "text-amber-700" : "text-slate-300 hover:text-amber-600"}`}
+                      >
+                        <Bookmark className={`h-3.5 w-3.5 ${bm ? "fill-current" : ""}`} />
+                      </button>
+                    </>
+                  )}
                   {isToday && <span className="shrink-0 text-[10px] font-bold uppercase text-indigo-600">Today</span>}
                 </li>
               );
@@ -570,6 +606,71 @@ export default function SystemDesignMastery() {
           </ul>
         )}
       </div>
+
+      {revisitModalConcept && (
+        <div
+          className="fixed inset-0 z-[100] flex items-end justify-center bg-black/45 p-0 sm:items-center sm:p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="revisit-modal-title"
+        >
+          <div className="max-h-[92vh] w-full max-w-2xl overflow-hidden rounded-t-2xl border border-prep-primary/15 bg-white shadow-2xl sm:rounded-2xl">
+            <div className="sticky top-0 z-10 flex items-start justify-between gap-3 border-b border-prep-primary/10 bg-white px-4 py-3 sm:px-5">
+              <div className="min-w-0">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-violet-700">Revisit</p>
+                <h2 id="revisit-modal-title" className="text-lg font-bold text-prep-text">
+                  {revisitModalConcept.title}
+                </h2>
+              </div>
+              <button
+                type="button"
+                onClick={() => setRevisitModalConceptId(null)}
+                className="shrink-0 rounded-lg p-2 text-prep-text-secondary hover:bg-slate-100 hover:text-prep-text"
+                aria-label="Close"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="overflow-y-auto px-4 py-4 sm:max-h-[calc(92vh-8rem)] sm:px-5 sm:py-5">
+              <p className="text-[14px] leading-relaxed text-prep-text-secondary">{revisitModalConcept.summary}</p>
+              <SdConceptLearningContent
+                concept={revisitModalConcept}
+                practiceLead="Revisit practice"
+                practiceHint="Run through the steps again without rushing. Close the Primer tab between sketch and compare if you want a stricter recall check."
+              />
+            </div>
+            <div className="sticky bottom-0 flex flex-wrap items-center gap-2 border-t border-prep-primary/10 bg-slate-50/95 px-4 py-3 sm:px-5">
+              <button
+                type="button"
+                onClick={() => void logRevisit(revisitModalConcept.id)}
+                disabled={actionLoading}
+                className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 px-4 py-3 text-[13px] font-bold text-white shadow-md transition hover:from-violet-500 hover:to-indigo-500 disabled:opacity-50 sm:flex-none"
+              >
+                {actionLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <History className="h-4 w-4" />}
+                Log revisit (+5 XP / day)
+              </button>
+              <button
+                type="button"
+                onClick={() =>
+                  void toggleRevisitBookmark(revisitModalConcept.id, bookmarked.has(revisitModalConcept.id))
+                }
+                disabled={actionLoading}
+                className="inline-flex items-center gap-2 rounded-xl border border-prep-primary/20 px-4 py-3 text-[13px] font-medium text-prep-text"
+              >
+                <Bookmark className={`h-4 w-4 ${bookmarked.has(revisitModalConcept.id) ? "fill-amber-500 text-amber-700" : ""}`} />
+                {bookmarked.has(revisitModalConcept.id) ? "Remove bookmark" : "Bookmark"}
+              </button>
+              <button
+                type="button"
+                onClick={() => setRevisitModalConceptId(null)}
+                className="rounded-xl border border-prep-primary/15 px-4 py-3 text-[13px] font-medium text-prep-text-secondary"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </section>
   );
 }
