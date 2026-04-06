@@ -39,6 +39,7 @@ import ResumeBuilder from "@/components/resume/ResumeBuilder";
 import ApplicationJDExtractor from "@/components/applications/ApplicationJDExtractor";
 import MarkdownContent from "@/components/ui/MarkdownContent";
 import JobChat from "@/components/chat/JobChat";
+import CompanyQuestionBank from "@/components/applications/CompanyQuestionBank";
 
 interface PageProps {
   params: { id: string };
@@ -237,6 +238,12 @@ export default async function ApplicationDetailPage({ params }: PageProps) {
               resumeMatchScoreAfter={null}
             />
           )}
+
+          <CompanyQuestionBank
+            company={app.company}
+            applicationId={app.id}
+            notesForImport={app.notes}
+          />
 
           <InterviewPrepCoach
             applicationId={app.id}

@@ -7,8 +7,21 @@ import { SuggestedPrompts } from "./SuggestedPrompts";
 import { ChatInput } from "./ChatInput";
 import type { AppStatus } from "@/types";
 import { format, isToday, isYesterday } from "date-fns";
+import { useToast } from "@/components/providers/ToastProvider";
 
 const NAVBAR_HEIGHT = 48;
+
+function stripSimpleMarkdownForSnippet(s: string): string {
+  return s
+    .replace(/```[\s\S]*?```/g, "\n")
+    .replace(/`([^`]+)`/g, "$1")
+    .replace(/^#{1,6}\s+/gm, "")
+    .replace(/\*\*|__/g, "")
+    .replace(/\[(.*?)\]\((.*?)\)/g, "$1")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim()
+    .slice(0, 10000);
+}
 
 interface JobChatProps {
   applicationId: string;
@@ -57,6 +70,7 @@ export default function JobChat({
   onPasteJd,
   variant = "panel",
 }: JobChatProps) {
+  const { toast } = useToast();
   const [messages, setMessages] = useState<ChatMessageData[]>([]);
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
@@ -74,6 +88,34 @@ export default function JobChat({
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
   const resumeInputRef = useRef<HTMLInputElement>(null);
+
+  const handleSaveToQuestionBank = useCallback(
+    async (raw: string) => {
+      const content = stripSimpleMarkdownForSnippet(raw);
+      if (!content) {
+        toast("Nothing to save");
+        return;
+      }
+      try {
+        const res = await fetch("/api/company-snippets", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            company,
+            content,
+            source: "chat",
+            applicationId,
+          }),
+        });
+        if (!res.ok) throw new Error("save");
+        window.dispatchEvent(new Event("company-snippets-changed"));
+        toast("Saved to company question bank");
+      } catch {
+        toast("Could not save to question bank");
+      }
+    },
+    [applicationId, company, toast]
+  );
 
   useEffect(() => {
     setHasResumeLocal(hasResume);
@@ -488,6 +530,9 @@ export default function JobChat({
                             onCopy={handleCopy}
                             onRegenerate={msg.role === "assistant" ? handleRegenerate : undefined}
                             onFeedback={msg.role === "assistant" ? handleFeedback : undefined}
+                            onSaveToQuestionBank={
+                              msg.role === "assistant" ? handleSaveToQuestionBank : undefined
+                            }
                             isRegenerating={sending}
                           />
                         </div>

@@ -1,7 +1,9 @@
+import { format } from "date-fns";
 import { jsPDF } from "jspdf";
 import { PREP_SECTIONS_BY_STAGE, PREP_BUTTON_LABELS } from "./prep-config";
 import { STATUS_LABELS } from "@/types";
 import type { AppStatus } from "@/types";
+import type { WeekPacketEntry } from "./week-interview-packet";
 const MARGIN = 20;
 const LINE_HEIGHT = 6;
 const SECTION_GAP = 10;
@@ -162,6 +164,125 @@ export function generatePrepPdf(
       y += wrapped.length * LINE_HEIGHT + 1;
     }
     y += SECTION_GAP;
+  }
+
+  return doc;
+}
+
+function appendStageSections(
+  doc: jsPDF,
+  y: number,
+  stage: AppStatus,
+  preps: Record<string, unknown>,
+  pageWidth: number,
+  pageHeight: number,
+  maxWidth: number
+): number {
+  const sections = PREP_SECTIONS_BY_STAGE[stage] ?? [];
+  for (const section of sections) {
+    const content = preps[section.key];
+    if (!content) continue;
+
+    if (y > pageHeight - 30) {
+      doc.addPage();
+      y = MARGIN;
+    }
+
+    doc.setFontSize(FONT_SIZE_SECTION);
+    doc.setFont("helvetica", "bold");
+    doc.text(section.label, MARGIN, y);
+    y += LINE_HEIGHT;
+
+    doc.setFontSize(FONT_SIZE_SMALL);
+    doc.setFont("helvetica", "normal");
+
+    const sectionLines = getSectionText(section.key, content);
+    for (const line of sectionLines) {
+      if (y > pageHeight - 25) {
+        doc.addPage();
+        y = MARGIN;
+      }
+      const wrapped = doc.splitTextToSize(line, maxWidth - 3);
+      doc.text(wrapped, MARGIN + 3, y);
+      y += wrapped.length * LINE_HEIGHT + 1;
+    }
+    y += SECTION_GAP;
+  }
+  return y;
+}
+
+/** Single PDF: upcoming week’s calendar events plus matching prep sections per event. */
+export function generateWeeklyInterviewPacketPdf(
+  rangeLabel: string,
+  entries: WeekPacketEntry[]
+): jsPDF {
+  const doc = new jsPDF({ unit: "mm", format: "a4" });
+  const pageWidth = 210;
+  const pageHeight = 297;
+  const maxWidth = pageWidth - 2 * MARGIN;
+
+  let y = MARGIN;
+
+  doc.setFontSize(FONT_SIZE_HEADING);
+  doc.setFont("helvetica", "bold");
+  doc.text("Interview packet (next 7 days)", MARGIN, y);
+  y += LINE_HEIGHT * 1.5;
+
+  doc.setFontSize(FONT_SIZE);
+  doc.setFont("helvetica", "normal");
+  doc.text(rangeLabel, MARGIN, y);
+  y += LINE_HEIGHT * 2;
+
+  if (entries.length === 0) {
+    doc.setFontSize(FONT_SIZE_SMALL);
+    doc.text("No scheduled events in this window. Add interviews on the calendar.", MARGIN, y);
+    return doc;
+  }
+
+  for (let i = 0; i < entries.length; i++) {
+    const entry = entries[i];
+    if (y > pageHeight - 40) {
+      doc.addPage();
+      y = MARGIN;
+    }
+
+    const when = format(new Date(entry.scheduledAt), "EEE, MMM d, yyyy — h:mm a");
+    doc.setFontSize(FONT_SIZE_SECTION);
+    doc.setFont("helvetica", "bold");
+    doc.text(`${i + 1}. ${entry.eventLabel} — ${entry.company}`, MARGIN, y);
+    y += LINE_HEIGHT;
+
+    doc.setFontSize(FONT_SIZE_SMALL);
+    doc.setFont("helvetica", "normal");
+    const metaLines = doc.splitTextToSize(
+      `${entry.role} · ${when}${entry.eventNotes ? `\nNotes: ${entry.eventNotes}` : ""}`,
+      maxWidth
+    );
+    doc.text(metaLines, MARGIN, y);
+    y += metaLines.length * LINE_HEIGHT + 2;
+
+    doc.setFontSize(FONT_SIZE_SMALL);
+    doc.setFont("helvetica", "italic");
+    const prepSubtitle = `Prep sections (${STATUS_LABELS[entry.prepStage]} — ${PREP_BUTTON_LABELS[entry.prepStage]})`;
+    const subWrapped = doc.splitTextToSize(prepSubtitle, maxWidth);
+    doc.text(subWrapped, MARGIN, y);
+    y += subWrapped.length * LINE_HEIGHT + SECTION_GAP / 2;
+    doc.setFont("helvetica", "normal");
+
+    const hasAnyPrep = Object.keys(entry.preps).length > 0;
+    if (!hasAnyPrep) {
+      doc.setFontSize(FONT_SIZE_SMALL);
+      const hint = doc.splitTextToSize(
+        "No saved prep for this stage yet — generate it from the application’s prep tab.",
+        maxWidth
+      );
+      doc.text(hint, MARGIN, y);
+      y += hint.length * LINE_HEIGHT + SECTION_GAP;
+      continue;
+    }
+
+    y = appendStageSections(doc, y, entry.prepStage, entry.preps, pageWidth, pageHeight, maxWidth);
+    y += SECTION_GAP / 2;
   }
 
   return doc;

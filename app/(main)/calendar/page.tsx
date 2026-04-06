@@ -4,6 +4,7 @@ import { CalendarClock } from "lucide-react";
 import { getCurrentUser } from "@/lib/session";
 import { getCalendarItems } from "@/lib/applications";
 import InterviewCalendar from "@/components/calendar/InterviewCalendar";
+import DownloadWeekPacketButton from "@/components/calendar/DownloadWeekPacketButton";
 
 export default async function CalendarPage() {
   const user = await getCurrentUser();
@@ -27,13 +28,16 @@ export default async function CalendarPage() {
             due.
           </p>
         </div>
-        <Link
-          href="/schedule"
-          className="inline-flex shrink-0 items-center gap-2 self-start border border-edge bg-surface px-3 py-2 text-[12px] font-medium text-t-muted transition-theme hover:border-accent/50 hover:text-t-primary sm:self-auto"
-        >
-          <CalendarClock className="h-4 w-4" />
-          Timeline view
-        </Link>
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+          <DownloadWeekPacketButton />
+          <Link
+            href="/schedule"
+            className="inline-flex shrink-0 items-center gap-2 border border-edge bg-surface px-3 py-2 text-[12px] font-medium text-t-muted transition-theme hover:border-accent/50 hover:text-t-primary"
+          >
+            <CalendarClock className="h-4 w-4" />
+            Timeline view
+          </Link>
+        </div>
       </div>
 
       <InterviewCalendar initialItems={items} />

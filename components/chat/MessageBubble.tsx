@@ -4,7 +4,7 @@ import { useState, useCallback } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { format, isToday, isYesterday } from "date-fns";
-import { Copy, RefreshCw, ThumbsUp, ThumbsDown } from "lucide-react";
+import { Copy, RefreshCw, ThumbsUp, ThumbsDown, BookmarkPlus } from "lucide-react";
 
 export interface ChatMessageData {
   id: string;
@@ -21,6 +21,8 @@ interface MessageBubbleProps {
   onCopy?: (text: string) => void;
   onRegenerate?: (messageId: string) => void;
   onFeedback?: (messageId: string, feedback: "positive" | "negative") => void;
+  /** Save assistant reply to the company question bank (application page). */
+  onSaveToQuestionBank?: (text: string) => void;
   isRegenerating?: boolean;
 }
 
@@ -35,6 +37,7 @@ export function MessageBubble({
   onCopy,
   onRegenerate,
   onFeedback,
+  onSaveToQuestionBank,
   isRegenerating,
 }: MessageBubbleProps) {
   const [showTimestamp, setShowTimestamp] = useState(false);
@@ -120,7 +123,7 @@ export function MessageBubble({
       </div>
 
       {/* Assistant message actions: below bubble so they don't overlap content */}
-      {!isUser && (onCopy || onRegenerate || onFeedback) && (
+      {!isUser && (onCopy || onRegenerate || onFeedback || onSaveToQuestionBank) && (
         <div className="mt-1.5 flex justify-start opacity-0 transition-opacity group-hover:opacity-100">
           <div className="flex items-center gap-1 rounded-lg border border-edge bg-surface/80 px-2 py-1.5">
             <button
@@ -131,6 +134,16 @@ export function MessageBubble({
             >
               <Copy className="h-3.5 w-3.5" />
             </button>
+            {onSaveToQuestionBank && (
+              <button
+                type="button"
+                onClick={() => onSaveToQuestionBank(message.content)}
+                className="rounded p-1 text-t-muted transition-colors hover:text-accent"
+                title="Save to question bank"
+              >
+                <BookmarkPlus className="h-3.5 w-3.5" />
+              </button>
+            )}
             {onRegenerate && (
               <button
                 type="button"
