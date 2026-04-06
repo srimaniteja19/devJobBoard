@@ -1,4 +1,3 @@
-import { prisma } from "@/lib/db";
 import {
   nextRankProgress,
   parseJsonStringArray,
@@ -7,6 +6,7 @@ import {
   scheduledConceptId,
   scheduledConceptIndex,
 } from "./sd-gamification";
+import { fetchUserSdStudyRow } from "./sd-user-fetch";
 import { SD_CURRICULUM, SD_CURRICULUM_VERSION, getConceptById, type SdConcept } from "./system-design-curriculum";
 
 export type SdStatePayload = {
@@ -19,6 +19,8 @@ export type SdStatePayload = {
   completedIds: string[];
   revisitBookmarkIds: string[];
   revisitLastYmd: Record<string, string>;
+  /** False until DB has sdRevisit* columns (run prisma db push / migrate). */
+  revisitStorageReady: boolean;
   xp: number;
   currentStreak: number;
   longestStreak: number;
@@ -59,25 +61,14 @@ function todayConceptForUser(
 }
 
 export async function buildSdStateForUser(userId: string, todayYmd: string): Promise<SdStatePayload> {
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: {
-      sdStudyStartYmd: true,
-      sdStudyCompletedIds: true,
-      sdStudyXp: true,
-      sdStudyCurrentStreak: true,
-      sdStudyLongestStreak: true,
-      sdBadgesUnlocked: true,
-      sdRevisitBookmarks: true,
-      sdRevisitLastYmd: true,
-    },
-  });
+  const user = await fetchUserSdStudyRow(userId);
 
   const completedIds = user ? parseJsonStringArray(user.sdStudyCompletedIds) : [];
   const revisitBookmarkIds = user ? parseJsonStringArray(user.sdRevisitBookmarks) : [];
   const revisitLastYmd = user ? parseJsonStringRecord(user.sdRevisitLastYmd) : {};
   const xp = user?.sdStudyXp ?? 0;
   const startYmd = user?.sdStudyStartYmd ?? null;
+  const revisitStorageReady = user ? user.revisitPersisted : true;
   const { concept, scheduledIndex, scheduledId, completed, bonusAvailable } = todayConceptForUser(
     startYmd,
     todayYmd,
@@ -96,6 +87,7 @@ export async function buildSdStateForUser(userId: string, todayYmd: string): Pro
     completedIds,
     revisitBookmarkIds,
     revisitLastYmd,
+    revisitStorageReady,
     xp,
     currentStreak: user?.sdStudyCurrentStreak ?? 0,
     longestStreak: user?.sdStudyLongestStreak ?? 0,

@@ -12,6 +12,7 @@ import {
   XP_REVISIT_LOG,
 } from "@/lib/study/sd-gamification";
 import { buildSdStateForUser } from "@/lib/study/sd-state";
+import { fetchUserSdStudyRow } from "@/lib/study/sd-user-fetch";
 import { getConceptById } from "@/lib/study/system-design-curriculum";
 import {
   sdCompleteSchema,
@@ -19,6 +20,9 @@ import {
   sdRevisitLogSchema,
   sdStartSchema,
 } from "@/lib/validations/sd-study";
+
+const REVISIT_DB_ERROR =
+  "Revisit bookmarks require a database update. Run: npx prisma db push (or prisma migrate deploy)";
 
 export async function GET(req: NextRequest) {
   const { user, unauthorized } = await authenticatedAction();
@@ -74,18 +78,7 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: "Unknown concept" }, { status: 400 });
       }
 
-      const u = await prisma.user.findUnique({
-        where: { id: user.id },
-        select: {
-          sdStudyStartYmd: true,
-          sdStudyCompletedIds: true,
-          sdStudyXp: true,
-          sdStudyCurrentStreak: true,
-          sdStudyLongestStreak: true,
-          sdStudyLastActiveYmd: true,
-          sdBadgesUnlocked: true,
-        },
-      });
+      const u = await fetchUserSdStudyRow(user.id);
       if (!u) {
         return NextResponse.json({ error: "User not found" }, { status: 404 });
       }
@@ -164,14 +157,11 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: "Unknown concept" }, { status: 400 });
       }
 
-      const u = await prisma.user.findUnique({
-        where: { id: user.id },
-        select: {
-          sdStudyCompletedIds: true,
-          sdRevisitBookmarks: true,
-        },
-      });
+      const u = await fetchUserSdStudyRow(user.id);
       if (!u) return NextResponse.json({ error: "User not found" }, { status: 404 });
+      if (!u.revisitPersisted) {
+        return NextResponse.json({ error: REVISIT_DB_ERROR }, { status: 503 });
+      }
 
       const completed = parseJsonStringArray(u.sdStudyCompletedIds);
       if (!completed.includes(conceptId)) {
@@ -207,17 +197,11 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: "Unknown concept" }, { status: 400 });
       }
 
-      const u = await prisma.user.findUnique({
-        where: { id: user.id },
-        select: {
-          sdStudyCompletedIds: true,
-          sdStudyXp: true,
-          sdStudyCurrentStreak: true,
-          sdRevisitLastYmd: true,
-          sdBadgesUnlocked: true,
-        },
-      });
+      const u = await fetchUserSdStudyRow(user.id);
       if (!u) return NextResponse.json({ error: "User not found" }, { status: 404 });
+      if (!u.revisitPersisted) {
+        return NextResponse.json({ error: REVISIT_DB_ERROR }, { status: 503 });
+      }
 
       const completed = parseJsonStringArray(u.sdStudyCompletedIds);
       if (!completed.includes(conceptId)) {

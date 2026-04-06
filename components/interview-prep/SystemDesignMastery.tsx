@@ -33,6 +33,8 @@ type SdState = {
   completedIds: string[];
   revisitBookmarkIds: string[];
   revisitLastYmd: Record<string, string>;
+  /** Omitted on older servers; treat undefined as ready. */
+  revisitStorageReady?: boolean;
   xp: number;
   currentStreak: number;
   longestStreak: number;
@@ -243,6 +245,7 @@ export default function SystemDesignMastery() {
   const unlocked = new Set(state.badgesUnlocked);
   const completed = new Set(state.completedIds);
   const bookmarked = new Set(state.revisitBookmarkIds ?? []);
+  const revisitOk = state.revisitStorageReady !== false;
   const progressPct = Math.round((state.completedIds.length / state.curriculum.length) * 100);
   const completedTopics = state.curriculum.filter((c) => completed.has(c.id));
   const bookmarkedTopics = state.revisitBookmarkIds
@@ -400,7 +403,16 @@ export default function SystemDesignMastery() {
           </div>
         ) : (
           <>
-            {bookmarkedTopics.length > 0 && (
+            {!revisitOk && (
+              <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50/90 px-3 py-2.5 text-[12px] text-amber-950">
+                <strong className="font-semibold">Revisit bookmarks</strong> need two new columns on{" "}
+                <code className="rounded bg-amber-100/80 px-1 font-mono text-[11px]">User</code>. From the project
+                root run{" "}
+                <code className="rounded bg-amber-100/80 px-1 font-mono text-[11px]">npx prisma db push</code> (local)
+                or apply migrations in production, then reload.
+              </div>
+            )}
+            {revisitOk && bookmarkedTopics.length > 0 && (
               <div className="mb-6 rounded-2xl border border-amber-200/80 bg-gradient-to-br from-amber-50/90 to-orange-50/40 p-4 sm:p-5">
                 <div className="mb-3 flex items-center gap-2">
                   <Bookmark className="h-4 w-4 text-amber-700" />
@@ -465,19 +477,21 @@ export default function SystemDesignMastery() {
                         >
                           Review
                         </button>
-                        <button
-                          type="button"
-                          title={bookmarked.has(c.id) ? "Remove from revisit queue" : "Add to revisit queue"}
-                          onClick={() => void toggleRevisitBookmark(c.id, bookmarked.has(c.id))}
-                          disabled={actionLoading}
-                          className={`shrink-0 rounded-lg p-1.5 transition ${
-                            bookmarked.has(c.id)
-                              ? "bg-amber-100 text-amber-800"
-                              : "text-slate-400 hover:bg-slate-100 hover:text-amber-700"
-                          }`}
-                        >
-                          <Bookmark className={`h-4 w-4 ${bookmarked.has(c.id) ? "fill-current" : ""}`} />
-                        </button>
+                        {revisitOk && (
+                          <button
+                            type="button"
+                            title={bookmarked.has(c.id) ? "Remove from revisit queue" : "Add to revisit queue"}
+                            onClick={() => void toggleRevisitBookmark(c.id, bookmarked.has(c.id))}
+                            disabled={actionLoading}
+                            className={`shrink-0 rounded-lg p-1.5 transition ${
+                              bookmarked.has(c.id)
+                                ? "bg-amber-100 text-amber-800"
+                                : "text-slate-400 hover:bg-slate-100 hover:text-amber-700"
+                            }`}
+                          >
+                            <Bookmark className={`h-4 w-4 ${bookmarked.has(c.id) ? "fill-current" : ""}`} />
+                          </button>
+                        )}
                       </li>
                     ))
                   )}
@@ -525,7 +539,7 @@ export default function SystemDesignMastery() {
                   </>
                 )}
               </button>
-              {state.todayConceptCompleted && (
+              {state.todayConceptCompleted && revisitOk && (
                 <button
                   type="button"
                   onClick={() => void toggleRevisitBookmark(state.todayConcept.id, bookmarked.has(state.todayConcept.id))}
@@ -588,15 +602,17 @@ export default function SystemDesignMastery() {
                       >
                         Review
                       </button>
-                      <button
-                        type="button"
-                        title={bm ? "Remove bookmark" : "Bookmark for revisit"}
-                        onClick={() => void toggleRevisitBookmark(c.id, bm)}
-                        disabled={actionLoading}
-                        className={`shrink-0 rounded p-1 ${bm ? "text-amber-700" : "text-slate-300 hover:text-amber-600"}`}
-                      >
-                        <Bookmark className={`h-3.5 w-3.5 ${bm ? "fill-current" : ""}`} />
-                      </button>
+                      {revisitOk && (
+                        <button
+                          type="button"
+                          title={bm ? "Remove bookmark" : "Bookmark for revisit"}
+                          onClick={() => void toggleRevisitBookmark(c.id, bm)}
+                          disabled={actionLoading}
+                          className={`shrink-0 rounded p-1 ${bm ? "text-amber-700" : "text-slate-300 hover:text-amber-600"}`}
+                        >
+                          <Bookmark className={`h-3.5 w-3.5 ${bm ? "fill-current" : ""}`} />
+                        </button>
+                      )}
                     </>
                   )}
                   {isToday && <span className="shrink-0 text-[10px] font-bold uppercase text-indigo-600">Today</span>}
@@ -640,26 +656,30 @@ export default function SystemDesignMastery() {
               />
             </div>
             <div className="sticky bottom-0 flex flex-wrap items-center gap-2 border-t border-prep-primary/10 bg-slate-50/95 px-4 py-3 sm:px-5">
-              <button
-                type="button"
-                onClick={() => void logRevisit(revisitModalConcept.id)}
-                disabled={actionLoading}
-                className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 px-4 py-3 text-[13px] font-bold text-white shadow-md transition hover:from-violet-500 hover:to-indigo-500 disabled:opacity-50 sm:flex-none"
-              >
-                {actionLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <History className="h-4 w-4" />}
-                Log revisit (+5 XP / day)
-              </button>
-              <button
-                type="button"
-                onClick={() =>
-                  void toggleRevisitBookmark(revisitModalConcept.id, bookmarked.has(revisitModalConcept.id))
-                }
-                disabled={actionLoading}
-                className="inline-flex items-center gap-2 rounded-xl border border-prep-primary/20 px-4 py-3 text-[13px] font-medium text-prep-text"
-              >
-                <Bookmark className={`h-4 w-4 ${bookmarked.has(revisitModalConcept.id) ? "fill-amber-500 text-amber-700" : ""}`} />
-                {bookmarked.has(revisitModalConcept.id) ? "Remove bookmark" : "Bookmark"}
-              </button>
+              {revisitOk && (
+                <button
+                  type="button"
+                  onClick={() => void logRevisit(revisitModalConcept.id)}
+                  disabled={actionLoading}
+                  className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 px-4 py-3 text-[13px] font-bold text-white shadow-md transition hover:from-violet-500 hover:to-indigo-500 disabled:opacity-50 sm:flex-none"
+                >
+                  {actionLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <History className="h-4 w-4" />}
+                  Log revisit (+5 XP / day)
+                </button>
+              )}
+              {revisitOk && (
+                <button
+                  type="button"
+                  onClick={() =>
+                    void toggleRevisitBookmark(revisitModalConcept.id, bookmarked.has(revisitModalConcept.id))
+                  }
+                  disabled={actionLoading}
+                  className="inline-flex items-center gap-2 rounded-xl border border-prep-primary/20 px-4 py-3 text-[13px] font-medium text-prep-text"
+                >
+                  <Bookmark className={`h-4 w-4 ${bookmarked.has(revisitModalConcept.id) ? "fill-amber-500 text-amber-700" : ""}`} />
+                  {bookmarked.has(revisitModalConcept.id) ? "Remove bookmark" : "Bookmark"}
+                </button>
+              )}
               <button
                 type="button"
                 onClick={() => setRevisitModalConceptId(null)}
