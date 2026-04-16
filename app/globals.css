@@ -8,16 +8,16 @@
 
 /* Light theme (default) */
 :root {
-  --color-bg: #f5f5f5;
-  --color-surface: #ffffff;
-  --color-edge: #e5e5e5;
-  --color-edge-hover: #d4d4d4;
+  --color-bg: #fff5fb;
+  --color-surface: #fffaff;
+  --color-edge: #f3d7e8;
+  --color-edge-hover: #eeb8d7;
   --color-accent: #db2777;
   --color-accent-hover: #be185d;
   --color-on-accent: #ffffff;
-  --color-t-primary: #171717;
-  --color-t-muted: #525252;
-  --color-t-faint: #a3a3a3;
+  --color-t-primary: #2a1021;
+  --color-t-muted: #6e3a59;
+  --color-t-faint: #b46f95;
   --color-purple-dark: #ede9fe;
   --color-purple: #ddd6fe;
   --color-purple-mid: #c4b5fd;
@@ -81,16 +81,16 @@
 
 /* Dark theme */
 [data-theme="dark"] {
-  --color-bg: #0a0a0a;
-  --color-surface: #111111;
-  --color-edge: #1e1e1e;
-  --color-edge-hover: #2e2e2e;
+  --color-bg: #120612;
+  --color-surface: #1b0a1a;
+  --color-edge: #3a1b34;
+  --color-edge-hover: #5a2a4f;
   --color-accent: #ff4fb3;
   --color-accent-hover: #ff38aa;
-  --color-on-accent: #0a0a0a;
-  --color-t-primary: #f0f0f0;
-  --color-t-muted: #555555;
-  --color-t-faint: #333333;
+  --color-on-accent: #1a0715;
+  --color-t-primary: #ffeaf7;
+  --color-t-muted: #f0b7d8;
+  --color-t-faint: #a55c89;
   --color-purple-dark: #1a1528;
   --color-purple: #2d2442;
   --color-purple-mid: #4a3f6b;
@@ -160,7 +160,7 @@
     @apply bg-bg text-t-primary font-light;
   }
   ::selection {
-    background: #e8ff4730;
+    background: #ff4fb340;
   }
   input[type="date"]::-webkit-calendar-picker-indicator {
     opacity: 0.6;
